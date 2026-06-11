@@ -14,6 +14,8 @@ const client = createTelegramAdsClient({
 ```
 
 The cookie must be a browser Cookie header for `https://ads.telegram.org`.
+See [Authentication](authentication.md) for how to identify the expected
+cookie and account token.
 
 ## Reporting Methods
 

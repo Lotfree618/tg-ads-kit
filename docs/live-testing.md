@@ -21,6 +21,9 @@ TG_ADS_API_TOKEN=replace-with-a-long-random-token
 Keep the Telegram Ads cookie private. Do not commit `.env`, cookies, account
 tokens, or live command output that includes private account data.
 
+See [Authentication](authentication.md) for how to identify the expected Cookie
+header and account token.
+
 ## Build Before CLI Smoke Tests
 
 ```bash
