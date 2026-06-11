@@ -8,9 +8,11 @@ import {
   normalizeCookieHeader,
   normalizeStatMonth,
 } from './internal.js';
-import { mergeAccountDailyRows, mergeAdDailyRows, mergeAdHourlyRows } from './merge.js';
+import { mergeAccountDailyRows, mergeAccountHourlyRows, mergeAdDailyRows, mergeAdHourlyRows } from './merge.js';
 import {
   parseTelegramAdsAccountAds,
+  parseTelegramAdsAccountHourlyBudgetCsv,
+  parseTelegramAdsAccountHourlyStatsCsv,
   parseTelegramAdsAdDailyReportCsv,
   parseTelegramAdsAdDailyStatsCsv,
   parseTelegramAdsAdHourlyBudgetCsv,
@@ -67,6 +69,27 @@ export function createTelegramAdsClient(options: TelegramAdsClientOptions): Tele
         this.fetchAccountDailyBudgetCsv(accountToken),
       ]);
       return mergeAccountDailyRows(parseTelegramAdsDailyStatsCsv(statsCsv), parseTelegramAdsDailyBudgetCsv(budgetCsv));
+    },
+
+    async fetchAccountFiveMinuteStatsCsv(accountToken) {
+      const normalizedToken = normalizeAccountToken(accountToken);
+      return await getText(`/csv?prefix=account/${encodeURIComponent(normalizedToken)}&period=5min`, 'text/csv');
+    },
+
+    async fetchAccountFiveMinuteBudgetCsv(accountToken) {
+      const normalizedToken = normalizeAccountToken(accountToken);
+      return await getText(`/csv?prefix=account/${encodeURIComponent(normalizedToken)}/budget&period=5min`, 'text/csv');
+    },
+
+    async fetchAccountHourlyRows(accountToken) {
+      const [statsCsv, budgetCsv] = await Promise.all([
+        this.fetchAccountFiveMinuteStatsCsv(accountToken),
+        this.fetchAccountFiveMinuteBudgetCsv(accountToken),
+      ]);
+      return mergeAccountHourlyRows(
+        parseTelegramAdsAccountHourlyStatsCsv(statsCsv),
+        parseTelegramAdsAccountHourlyBudgetCsv(budgetCsv),
+      );
     },
 
     async fetchMonthlyReportCsv(accountToken, statMonth) {

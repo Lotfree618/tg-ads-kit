@@ -23,6 +23,11 @@ Returns service status.
 
 Fetches account daily stats and budget, then returns merged rows.
 
+### `GET /v1/accounts/:accountToken/hourly`
+
+Fetches account five-minute stats and budget, groups complete 12-interval
+hours, and returns merged hourly rows.
+
 ### `GET /v1/accounts/:accountToken/monthly?month=YYYYMM`
 
 Fetches the account monthly ad report for the requested month.
@@ -75,4 +80,3 @@ Failed responses:
 curl http://127.0.0.1:3000/v1/accounts/$TELEGRAM_ADS_ACCOUNT_TOKEN/daily \
   -H "Authorization: Bearer $TG_ADS_API_TOKEN"
 ```
-

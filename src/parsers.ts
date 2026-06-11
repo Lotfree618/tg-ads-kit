@@ -15,6 +15,11 @@ import { TelegramAdsParseError } from './errors.js';
 import type {
   TelegramAdsAccountDailyBudgetRow,
   TelegramAdsAccountDailyStatsRow,
+  TelegramAdsAccountFiveMinuteBudgetRow,
+  TelegramAdsAccountFiveMinuteStatsRow,
+  TelegramAdsAccountHourlyBudgetRow,
+  TelegramAdsAccountHourlyRow,
+  TelegramAdsAccountHourlyStatsRow,
   TelegramAdsAdFiveMinuteBudgetRow,
   TelegramAdsAdFiveMinuteStatsRow,
   TelegramAdsAdMetadataRow,
@@ -53,6 +58,32 @@ export function parseTelegramAdsDailyBudgetCsv(csv: string): Map<string, Telegra
     });
   }
   return out;
+}
+
+export function parseTelegramAdsAccountFiveMinuteStatsCsv(csv: string): TelegramAdsAccountFiveMinuteStatsRow[] {
+  const rows = parseDelimitedRows(csv);
+  return rows.map((row) => ({
+    ...normalizeTelegramDateTimeUtc(requireCsvValue(row, 'date')),
+    impressions: parseNonNegativeInteger(requireCsvValue(row, 'Views')),
+    clicks: parseNonNegativeInteger(requireCsvValue(row, 'Clicks')),
+    conversions: parseNonNegativeNumber(requireCsvValue(row, 'Actions')),
+  }));
+}
+
+export function parseTelegramAdsAccountFiveMinuteBudgetCsv(csv: string): TelegramAdsAccountFiveMinuteBudgetRow[] {
+  const rows = parseDelimitedRows(csv);
+  return rows.map((row) => ({
+    ...normalizeTelegramDateTimeUtc(requireCsvValue(row, 'date')),
+    costMicros: parseTonMicros(requireCsvValue(row, 'Spent budget, TON')),
+  }));
+}
+
+export function parseTelegramAdsAccountHourlyStatsCsv(csv: string): TelegramAdsAccountHourlyStatsRow[] {
+  return aggregateTelegramAdsAccountHourlyStatsRows(parseTelegramAdsAccountFiveMinuteStatsCsv(csv));
+}
+
+export function parseTelegramAdsAccountHourlyBudgetCsv(csv: string): TelegramAdsAccountHourlyBudgetRow[] {
+  return aggregateTelegramAdsAccountHourlyBudgetRows(parseTelegramAdsAccountFiveMinuteBudgetCsv(csv));
 }
 
 export function parseTelegramAdsMonthlyReportCsv(csv: string, statMonth: string): TelegramAdsAdMonthlyRow[] {
@@ -133,6 +164,50 @@ export function parseTelegramAdsAdHourlyStatsCsv(adId: string, csv: string): Tel
 
 export function parseTelegramAdsAdHourlyBudgetCsv(adId: string, csv: string): TelegramAdsAdHourlyBudgetRow[] {
   return aggregateTelegramAdsHourlyBudgetRows(parseTelegramAdsAdFiveMinuteBudgetCsv(adId, csv));
+}
+
+export function aggregateTelegramAdsAccountHourlyStatsRows(
+  rows: TelegramAdsAccountFiveMinuteStatsRow[],
+): TelegramAdsAccountHourlyStatsRow[] {
+  const groups = new Map<string, TelegramAdsAccountHourlyStatsRow & { intervalCount: number }>();
+  for (const row of rows) {
+    const existing = groups.get(row.bucketStartUtc);
+    groups.set(row.bucketStartUtc, {
+      bucketStartUtc: row.bucketStartUtc,
+      statDate: row.statDate,
+      statHour: row.statHour,
+      impressions: (existing?.impressions ?? 0) + row.impressions,
+      clicks: (existing?.clicks ?? 0) + row.clicks,
+      conversions: (existing?.conversions ?? 0) + row.conversions,
+      intervalCount: (existing?.intervalCount ?? 0) + 1,
+    });
+  }
+
+  return [...groups.values()]
+    .filter((row) => row.intervalCount === 12)
+    .map(({ intervalCount: _intervalCount, ...row }) => row)
+    .sort(compareAccountHourlyRows);
+}
+
+export function aggregateTelegramAdsAccountHourlyBudgetRows(
+  rows: TelegramAdsAccountFiveMinuteBudgetRow[],
+): TelegramAdsAccountHourlyBudgetRow[] {
+  const groups = new Map<string, TelegramAdsAccountHourlyBudgetRow & { intervalCount: number }>();
+  for (const row of rows) {
+    const existing = groups.get(row.bucketStartUtc);
+    groups.set(row.bucketStartUtc, {
+      bucketStartUtc: row.bucketStartUtc,
+      statDate: row.statDate,
+      statHour: row.statHour,
+      costMicros: (existing?.costMicros ?? 0) + row.costMicros,
+      intervalCount: (existing?.intervalCount ?? 0) + 1,
+    });
+  }
+
+  return [...groups.values()]
+    .filter((row) => row.intervalCount === 12)
+    .map(({ intervalCount: _intervalCount, ...row }) => row)
+    .sort(compareAccountHourlyRows);
 }
 
 export function aggregateTelegramAdsHourlyStatsRows(
@@ -266,6 +341,13 @@ function mergeAdMetadataRows(
   return [...byId.values()];
 }
 
+function compareAccountHourlyRows(
+  left: Pick<TelegramAdsAccountHourlyRow, 'bucketStartUtc'>,
+  right: Pick<TelegramAdsAccountHourlyRow, 'bucketStartUtc'>,
+): number {
+  return left.bucketStartUtc.localeCompare(right.bucketStartUtc);
+}
+
 function compareHourlyRows(
   left: Pick<TelegramAdsAdHourlyRow, 'adId' | 'bucketStartUtc'>,
   right: Pick<TelegramAdsAdHourlyRow, 'adId' | 'bucketStartUtc'>,
@@ -276,4 +358,3 @@ function compareHourlyRows(
 function buildAdBucketKey(adId: string, bucketStartUtc: string): string {
   return `${adId}:${bucketStartUtc}`;
 }
-

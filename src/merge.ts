@@ -3,6 +3,9 @@ import type {
   TelegramAdsAccountDailyBudgetRow,
   TelegramAdsAccountDailyRow,
   TelegramAdsAccountDailyStatsRow,
+  TelegramAdsAccountHourlyBudgetRow,
+  TelegramAdsAccountHourlyRow,
+  TelegramAdsAccountHourlyStatsRow,
   TelegramAdsAdDailyReportRow,
   TelegramAdsAdDailyRow,
   TelegramAdsAdDailyStatsRow,
@@ -28,6 +31,31 @@ export function mergeAccountDailyRows(
       conversions: stats?.conversions ?? 0,
     };
   });
+}
+
+export function mergeAccountHourlyRows(
+  statsRows: TelegramAdsAccountHourlyStatsRow[],
+  budgetRows: TelegramAdsAccountHourlyBudgetRow[],
+): TelegramAdsAccountHourlyRow[] {
+  const budgetByBucket = new Map(budgetRows.map((row) => [row.bucketStartUtc, row]));
+  const statsKeys = new Set(statsRows.map((row) => row.bucketStartUtc));
+
+  for (const row of statsRows) {
+    if (!budgetByBucket.has(row.bucketStartUtc)) {
+      throw new TelegramAdsParseError(`Telegram Ads account hourly budget missing for hour ${row.bucketStartUtc}`);
+    }
+  }
+
+  for (const row of budgetRows) {
+    if (!statsKeys.has(row.bucketStartUtc)) {
+      throw new TelegramAdsParseError(`Telegram Ads account hourly stats missing for hour ${row.bucketStartUtc}`);
+    }
+  }
+
+  return statsRows.map((row) => ({
+    ...row,
+    costMicros: budgetByBucket.get(row.bucketStartUtc)!.costMicros,
+  }));
 }
 
 export function mergeMonthlyRowsWithAdStats(
@@ -117,4 +145,3 @@ function buildAdDateKey(adId: string, statDate: string): string {
 function buildAdBucketKey(adId: string, bucketStartUtc: string): string {
   return `${adId}:${bucketStartUtc}`;
 }
-

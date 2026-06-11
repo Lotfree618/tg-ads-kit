@@ -23,6 +23,9 @@ export type TelegramAdsClient = {
   fetchAccountDailyStatsCsv(accountToken: string): Promise<string>;
   fetchAccountDailyBudgetCsv(accountToken: string): Promise<string>;
   fetchAccountDailyRows(accountToken: string): Promise<TelegramAdsAccountDailyRow[]>;
+  fetchAccountFiveMinuteStatsCsv(accountToken: string): Promise<string>;
+  fetchAccountFiveMinuteBudgetCsv(accountToken: string): Promise<string>;
+  fetchAccountHourlyRows(accountToken: string): Promise<TelegramAdsAccountHourlyRow[]>;
   fetchMonthlyReportCsv(accountToken: string, statMonth: string): Promise<string>;
   fetchMonthlyReport(accountToken: string, statMonth: string): Promise<TelegramAdsAdMonthlyRow[]>;
   fetchAccountAdsHtml(): Promise<string>;
@@ -48,6 +51,30 @@ export type TelegramAdsAccountDailyBudgetRow = {
 };
 
 export type TelegramAdsAccountDailyRow = TelegramAdsAccountDailyStatsRow & {
+  costMicros: number;
+};
+
+export type TelegramAdsAccountFiveMinuteStatsRow = {
+  bucketStartUtc: string;
+  statDate: string;
+  statHour: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+};
+
+export type TelegramAdsAccountFiveMinuteBudgetRow = {
+  bucketStartUtc: string;
+  statDate: string;
+  statHour: number;
+  costMicros: number;
+};
+
+export type TelegramAdsAccountHourlyStatsRow = TelegramAdsAccountFiveMinuteStatsRow;
+
+export type TelegramAdsAccountHourlyBudgetRow = TelegramAdsAccountFiveMinuteBudgetRow;
+
+export type TelegramAdsAccountHourlyRow = TelegramAdsAccountHourlyStatsRow & {
   costMicros: number;
 };
 
@@ -113,4 +140,3 @@ export type TelegramAdsAdMetadataRow = {
   cpmMicros: number | null;
   currentBudgetMicros: number | null;
 };
-

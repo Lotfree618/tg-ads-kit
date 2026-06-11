@@ -83,6 +83,13 @@ function registerRoutes(app: FastifyInstance, client: TelegramAdsClient): void {
     });
   });
 
+  app.get<{ Params: AccountParams }>('/v1/accounts/:accountToken/hourly', async (request) => {
+    const accountToken = normalizeAccountToken(request.params.accountToken);
+    return ok({
+      rows: await client.fetchAccountHourlyRows(accountToken),
+    });
+  });
+
   app.get<{ Params: AccountParams; Querystring: MonthQuery }>(
     '/v1/accounts/:accountToken/monthly',
     async (request) => {
@@ -204,4 +211,3 @@ function sendError(reply: FastifyReply, error: unknown): void {
     },
   });
 }
-

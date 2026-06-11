@@ -65,6 +65,7 @@ Main routes:
 
 - `GET /health`
 - `GET /v1/accounts/:accountToken/daily`
+- `GET /v1/accounts/:accountToken/hourly`
 - `GET /v1/accounts/:accountToken/monthly?month=YYYYMM`
 - `GET /v1/session/ads`
 - `GET /v1/accounts/:accountToken/ads/:adId/daily?month=YYYYMM`
@@ -80,6 +81,7 @@ a package it is exposed as `tg-ads-kit`.
 
 ```bash
 tg-ads-kit account-daily "$TELEGRAM_ADS_ACCOUNT_TOKEN"
+tg-ads-kit account-hourly "$TELEGRAM_ADS_ACCOUNT_TOKEN"
 tg-ads-kit monthly "$TELEGRAM_ADS_ACCOUNT_TOKEN" 202606
 tg-ads-kit session-ads
 tg-ads-kit ad-daily "$TELEGRAM_ADS_ACCOUNT_TOKEN" 187 202606
@@ -123,6 +125,8 @@ const rows = mergeAccountDailyRows(stats, budget);
 
 - `/csv?prefix=account/{accountToken}&period=day`
 - `/csv?prefix=account/{accountToken}/budget&period=day`
+- `/csv?prefix=account/{accountToken}&period=5min`
+- `/csv?prefix=account/{accountToken}/budget&period=5min`
 - `/reports/account/{accountToken}?month={YYYYMM}`
 - `/reports/account/{accountToken}/ad/{adId}?month={YYYYMM}`
 - `/csv?prefix=ad/{accountToken}/{adId}&period=day`
@@ -138,8 +142,21 @@ Telegram Ads hourly CSVs are observed as five-minute rows. The parser groups
 them into hourly rows and returns only complete hours containing 12 five-minute
 intervals. This is intentional because the current hour can be incomplete.
 
+Account-level hourly rows use the account five-minute CSVs and ad-level hourly
+rows use the ad five-minute CSVs. Other observed period values that return daily
+rows are not treated as hourly data.
+
 Use `parseTelegramAdsAdFiveMinuteStatsCsv` or
 `parseTelegramAdsAdFiveMinuteBudgetCsv` if you need the raw five-minute rows.
+
+## Extension Notes
+
+The authenticated Telegram Ads UI also exposes read-only HTML pages such as
+`/account/ad/{adId}`, `/account/ad/{adId}/stats`, and `/account/budget`.
+Those pages contain campaign configuration, targeting, and account transaction
+details. They should be added through explicit typed parsers before being
+exposed by this package. Form-backed edit routes are intentionally out of scope
+for the reporting API.
 
 ## Errors
 

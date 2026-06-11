@@ -19,6 +19,9 @@ async function main(): Promise<void> {
     } else if (command === 'account-daily') {
       const accountToken = normalizeAccountToken(args[0], 'accountToken');
       printJson(await createClient().fetchAccountDailyRows(accountToken));
+    } else if (command === 'account-hourly') {
+      const accountToken = normalizeAccountToken(args[0], 'accountToken');
+      printJson(await createClient().fetchAccountHourlyRows(accountToken));
     } else if (command === 'monthly') {
       const accountToken = normalizeAccountToken(args[0], 'accountToken');
       const month = normalizeStatMonth(args[1], 'month');
@@ -76,6 +79,7 @@ function printHelp(): void {
 Usage:
   tg-ads-kit serve
   tg-ads-kit account-daily <accountToken>
+  tg-ads-kit account-hourly <accountToken>
   tg-ads-kit monthly <accountToken> <YYYYMM>
   tg-ads-kit session-ads
   tg-ads-kit ad-daily <accountToken> <adId> <YYYYMM>

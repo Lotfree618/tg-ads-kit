@@ -1,6 +1,9 @@
 import {
   mergeAdDailyRows,
   parseTelegramAdsAccountAds,
+  parseTelegramAdsAccountFiveMinuteStatsCsv,
+  parseTelegramAdsAccountHourlyBudgetCsv,
+  parseTelegramAdsAccountHourlyStatsCsv,
   parseTelegramAdsAdDailyReportCsv,
   parseTelegramAdsAdDailyStatsCsv,
   parseTelegramAdsAdFiveMinuteStatsCsv,
@@ -18,6 +21,21 @@ describe('Telegram Ads parsers', () => {
     const monthly = parseTelegramAdsMonthlyReportCsv(
       'Ad ID\tAd Title\tViews\tAmount, TON\nAD00000187\tTG Ad A\t999\t0,0402\nTotal in Jun 2026\t\t999\t0,0402\n',
       '202606',
+    );
+    const accountHourlyStats = parseTelegramAdsAccountHourlyStatsCsv(
+      [
+        'date\tViews\tClicks\tActions',
+        ...Array.from(
+          { length: 12 },
+          (_, index) => `09 June 2026 2:${String(index * 5).padStart(2, '0')} UTC\t10\t${index === 0 ? 2 : 1}\t${index === 0 ? 1 : 0}`,
+        ),
+      ].join('\n'),
+    );
+    const accountHourlyBudget = parseTelegramAdsAccountHourlyBudgetCsv(
+      [
+        'date\tSpent budget, TON',
+        ...Array.from({ length: 12 }, (_, index) => `09 June 2026 2:${String(index * 5).padStart(2, '0')} UTC\t0.0001`),
+      ].join('\n'),
     );
     const adDailyReport = parseTelegramAdsAdDailyReportCsv(
       '187',
@@ -69,6 +87,24 @@ describe('Telegram Ads parsers', () => {
         clicks: 0,
         costMicros: 40_200,
         conversions: 0,
+      },
+    ]);
+    expect(accountHourlyStats).toEqual([
+      {
+        bucketStartUtc: '2026-06-09T02:00:00.000Z',
+        statDate: '2026-06-09',
+        statHour: 2,
+        impressions: 120,
+        clicks: 13,
+        conversions: 1,
+      },
+    ]);
+    expect(accountHourlyBudget).toEqual([
+      {
+        bucketStartUtc: '2026-06-09T02:00:00.000Z',
+        statDate: '2026-06-09',
+        statHour: 2,
+        costMicros: 1_200,
       },
     ]);
     expect(adDailyReport).toEqual([
@@ -132,6 +168,10 @@ describe('Telegram Ads parsers', () => {
 
     expect(parseTelegramAdsAdFiveMinuteStatsCsv('187', csv)).toHaveLength(11);
     expect(parseTelegramAdsAdHourlyStatsCsv('187', csv)).toEqual([]);
+
+    const accountCsv = csv.replace('Joined', 'Actions');
+    expect(parseTelegramAdsAccountFiveMinuteStatsCsv(accountCsv)).toHaveLength(11);
+    expect(parseTelegramAdsAccountHourlyStatsCsv(accountCsv)).toEqual([]);
   });
 
   it('fails clearly when required columns are missing', () => {
@@ -152,4 +192,3 @@ describe('Telegram Ads parsers', () => {
     );
   });
 });
-
