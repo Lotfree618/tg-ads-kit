@@ -1,0 +1,54 @@
+{
+  "name": "tg-ads-kit",
+  "version": "0.1.0",
+  "description": "Unofficial Telegram Ads reporting client and parser toolkit.",
+  "type": "module",
+  "license": "MIT",
+  "author": "",
+  "keywords": [
+    "telegram",
+    "telegram-ads",
+    "ads",
+    "reporting",
+    "csv",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist coverage",
+    "prepublishOnly": "npm run test && npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  }
+}
+
