@@ -68,6 +68,12 @@ Main routes:
 - `GET /v1/accounts/:accountToken/hourly`
 - `GET /v1/accounts/:accountToken/monthly?month=YYYYMM`
 - `GET /v1/session/ads`
+- `GET /v1/session/account/budget?offset=0&limit=100`
+- `GET /v1/session/account/edit`
+- `GET /v1/accounts/:accountToken/ads/:adId/detail`
+- `GET /v1/accounts/:accountToken/ads/:adId/stats-page`
+- `GET /v1/accounts/:accountToken/ads/:adId/budget-page`
+- `GET /v1/accounts/:accountToken/ads/:adId/edit/:section`
 - `GET /v1/accounts/:accountToken/ads/:adId/daily?month=YYYYMM`
 - `GET /v1/accounts/:accountToken/ads/:adId/hourly`
 - `GET /v1/accounts/:accountToken/snapshot?month=YYYYMM`
@@ -84,6 +90,12 @@ tg-ads-kit account-daily "$TELEGRAM_ADS_ACCOUNT_TOKEN"
 tg-ads-kit account-hourly "$TELEGRAM_ADS_ACCOUNT_TOKEN"
 tg-ads-kit monthly "$TELEGRAM_ADS_ACCOUNT_TOKEN" 202606
 tg-ads-kit session-ads
+tg-ads-kit account-budget 0 100
+tg-ads-kit account-edit
+tg-ads-kit ad-detail 187
+tg-ads-kit ad-stats-page "$TELEGRAM_ADS_ACCOUNT_TOKEN" 187
+tg-ads-kit ad-budget-page 187
+tg-ads-kit ad-edit-page 187 status
 tg-ads-kit ad-daily "$TELEGRAM_ADS_ACCOUNT_TOKEN" 187 202606
 tg-ads-kit ad-hourly "$TELEGRAM_ADS_ACCOUNT_TOKEN" 187
 tg-ads-kit serve
@@ -133,6 +145,12 @@ const rows = mergeAccountDailyRows(stats, budget);
 - `/csv?prefix=ad/{accountToken}/{adId}&period=5min`
 - `/csv?prefix=ad/{accountToken}/{adId}/budget&period=5min`
 - `/account` ad metadata table
+- `/account/ad/{adId}` ad detail form snapshot
+- `/account/ad/{adId}/stats` ad stats page links and table rows
+- `/account/budget` account budget transactions
+- `/account/edit` account info form snapshot
+- `/account/ad/{adId}/budget` ad budget form snapshot
+- `/account/ad/{adId}/edit_{cpm|budget|status}` edit form snapshots
 
 Money is represented as TON micros, where `1 TON = 1_000_000` micros.
 
@@ -149,14 +167,12 @@ rows are not treated as hourly data.
 Use `parseTelegramAdsAdFiveMinuteStatsCsv` or
 `parseTelegramAdsAdFiveMinuteBudgetCsv` if you need the raw five-minute rows.
 
-## Extension Notes
+## Page Snapshots
 
-The authenticated Telegram Ads UI also exposes read-only HTML pages such as
-`/account/ad/{adId}`, `/account/ad/{adId}/stats`, and `/account/budget`.
-Those pages contain campaign configuration, targeting, and account transaction
-details. They should be added through explicit typed parsers before being
-exposed by this package. Form-backed edit routes are intentionally out of scope
-for the reporting API.
+The package exposes authenticated Telegram Ads HTML pages as typed read-only
+snapshots. This includes form field values from account, ad, budget, and edit
+pages. These methods only perform GET requests. They do not submit forms, call
+Telegram's internal `/api?hash=...` endpoint, or mutate campaigns.
 
 ## Errors
 

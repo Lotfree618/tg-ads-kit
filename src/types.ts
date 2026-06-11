@@ -30,6 +30,18 @@ export type TelegramAdsClient = {
   fetchMonthlyReport(accountToken: string, statMonth: string): Promise<TelegramAdsAdMonthlyRow[]>;
   fetchAccountAdsHtml(): Promise<string>;
   fetchAccountAds(): Promise<TelegramAdsAdMetadataRow[]>;
+  fetchAccountBudgetHtml(offset?: number, limit?: number): Promise<string>;
+  fetchAccountBudgetPage(offset?: number, limit?: number): Promise<TelegramAdsAccountBudgetPage>;
+  fetchAccountEditHtml(): Promise<string>;
+  fetchAccountEditPage(): Promise<TelegramAdsAccountEditPage>;
+  fetchAdDetailHtml(adId: string): Promise<string>;
+  fetchAdDetail(adId: string): Promise<TelegramAdsAdDetailPage>;
+  fetchAdStatsHtml(accountToken: string, adId: string): Promise<string>;
+  fetchAdStatsPage(accountToken: string, adId: string): Promise<TelegramAdsAdStatsPage>;
+  fetchAdBudgetHtml(adId: string): Promise<string>;
+  fetchAdBudgetPage(adId: string): Promise<TelegramAdsAdBudgetPage>;
+  fetchAdEditHtml(adId: string, section: TelegramAdsAdEditSection): Promise<string>;
+  fetchAdEditPage(adId: string, section: TelegramAdsAdEditSection): Promise<TelegramAdsAdEditPage>;
   fetchAdDailyReportCsv(accountToken: string, adId: string, statMonth: string): Promise<string>;
   fetchAdDailyStatsCsv(accountToken: string, adId: string): Promise<string>;
   fetchAdDailyRows(accountToken: string, adId: string, statMonth: string): Promise<TelegramAdsAdDailyRow[]>;
@@ -139,4 +151,119 @@ export type TelegramAdsAdMetadataRow = {
   adStatus: TelegramAdsStatus | null;
   cpmMicros: number | null;
   currentBudgetMicros: number | null;
+};
+
+export type TelegramAdsHtmlFormInput = {
+  tagName: 'input' | 'textarea' | 'select';
+  name: string | null;
+  type: string | null;
+  value: string | null;
+  placeholder: string | null;
+  checked: boolean;
+};
+
+export type TelegramAdsHtmlFormButton = {
+  type: string | null;
+  text: string;
+};
+
+export type TelegramAdsHtmlForm = {
+  className: string | null;
+  method: string;
+  action: string | null;
+  inputs: TelegramAdsHtmlFormInput[];
+  buttons: TelegramAdsHtmlFormButton[];
+};
+
+export type TelegramAdsPageLink = {
+  href: string;
+  text: string;
+};
+
+export type TelegramAdsAdEditSection = 'cpm' | 'budget' | 'status';
+
+export type TelegramAdsAdDetailPage = {
+  adId: string;
+  title: string;
+  form: TelegramAdsHtmlForm;
+  fields: {
+    title: string | null;
+    text: string | null;
+    promoteUrl: string | null;
+    websiteName: string | null;
+    cpmMicros: number | null;
+    dailyBudgetMicros: number | null;
+    viewsPerUser: number | null;
+    active: boolean | null;
+    activateDate: string | null;
+    activateTime: string | null;
+    deactivateDate: string | null;
+    deactivateTime: string | null;
+    usesSchedule: boolean;
+    schedule: string | null;
+    scheduleTimezone: string | null;
+    targetType: string | null;
+    targetCount: number | null;
+  };
+  links: TelegramAdsPageLink[];
+};
+
+export type TelegramAdsAdStatsPage = {
+  adId: string;
+  title: string;
+  reportLinks: TelegramAdsPageLink[];
+  shareStatsPath: string | null;
+  rows: string[];
+  links: TelegramAdsPageLink[];
+};
+
+export type TelegramAdsBudgetTransactionRow = {
+  description: string;
+  amountMicros: number;
+  direction: 'credit' | 'debit';
+  occurredAtText: string | null;
+};
+
+export type TelegramAdsAccountBudgetPage = {
+  offset: number | null;
+  limit: number | null;
+  balanceMicros: number | null;
+  transactions: TelegramAdsBudgetTransactionRow[];
+  pagination: TelegramAdsPageLink[];
+  links: TelegramAdsPageLink[];
+};
+
+export type TelegramAdsAccountEditPage = {
+  form: TelegramAdsHtmlForm;
+  fields: {
+    fullName: string | null;
+    email: string | null;
+    phoneNumber: string | null;
+    country: string | null;
+    city: string | null;
+    adInfo: string | null;
+  };
+  links: TelegramAdsPageLink[];
+};
+
+export type TelegramAdsAdBudgetPage = {
+  adId: string;
+  title: string;
+  form: TelegramAdsHtmlForm;
+  fields: {
+    ownerId: string | null;
+    adId: string | null;
+    amountMicros: number | null;
+    decreaseAmountMicros: number | null;
+  };
+  links: TelegramAdsPageLink[];
+};
+
+export type TelegramAdsAdEditPage = {
+  adId: string;
+  section: TelegramAdsAdEditSection;
+  title: string;
+  form: TelegramAdsHtmlForm;
+  fields: Record<string, string | boolean | null>;
+  links: TelegramAdsPageLink[];
 };

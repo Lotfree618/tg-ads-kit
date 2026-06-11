@@ -108,9 +108,51 @@ describe('Telegram Ads API server', () => {
       },
     });
   });
+
+  it('serves GET-only ad detail page snapshots', async () => {
+    const fetcher = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(String(input));
+      expect(init?.method).toBeUndefined();
+      if (url.pathname === '/account/ad/205') {
+        return textResponse(`
+          <title>Nange3 - Telegram Ads</title>
+          <form class="js-ad-form">
+            <input name="title" value="Nange3">
+            <input name="cpm" value="0.30">
+          </form>
+        `);
+      }
+      return textResponse('not found', 404);
+    });
+    const app = createTelegramAdsApiServer({
+      apiToken: 'test-token',
+      cookie: 'stel_adowner=owner',
+      fetch: fetcher as typeof fetch,
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/v1/accounts/tg_account_token_1234/ads/205/detail',
+      headers: {
+        authorization: 'Bearer test-token',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      ok: true,
+      data: {
+        adId: '205',
+        title: 'Nange3',
+        fields: {
+          title: 'Nange3',
+          cpmMicros: 300_000,
+        },
+      },
+    });
+  });
 });
 
 function textResponse(body: string, status = 200): Response {
   return new Response(body, { status });
 }
-

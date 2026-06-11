@@ -76,6 +76,30 @@ export function normalizeCookieHeader(value: unknown, fieldName = 'cookie'): str
   return cookie;
 }
 
+export function normalizeAdEditSection(value: unknown, fieldName = 'section'): 'cpm' | 'budget' | 'status' {
+  const text = requireText(value, fieldName);
+  if (text === 'cpm' || text === 'budget' || text === 'status') {
+    return text;
+  }
+  throw new TelegramAdsValidationError(`${fieldName} must be one of cpm, budget, status`);
+}
+
+export function normalizeNonNegativeIntegerInput(value: unknown, fieldName: string): number {
+  const text = requireText(value, fieldName);
+  if (!/^\d+$/.test(text)) {
+    throw new TelegramAdsValidationError(`${fieldName} must be a non-negative integer`);
+  }
+  return Number(text);
+}
+
+export function normalizePositiveIntegerInput(value: unknown, fieldName: string): number {
+  const parsed = normalizeNonNegativeIntegerInput(value, fieldName);
+  if (parsed < 1) {
+    throw new TelegramAdsValidationError(`${fieldName} must be a positive integer`);
+  }
+  return parsed;
+}
+
 export function parseDelimitedRows(text: string): Record<string, string>[] {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
   if (!lines.length) {
@@ -251,10 +275,10 @@ export function stripTags(value: string): string {
 }
 
 export function normalizeHtmlText(value: string): string {
-  return decodeHtml(stripTags(value)).replace(/\s+/g, ' ').trim();
+  return decodeHtmlEntities(stripTags(value)).replace(/\s+/g, ' ').trim();
 }
 
-function decodeHtml(value: string): string {
+export function decodeHtmlEntities(value: string): string {
   return value
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
@@ -284,4 +308,3 @@ export function maskTelegramAdsCsvPrefix(prefix: string | null): string {
 
   return text.replace(/[A-Za-z0-9_-]{16,128}/g, '{accountToken}');
 }
-

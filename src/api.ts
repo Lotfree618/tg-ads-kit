@@ -11,7 +11,15 @@ import {
   TelegramAdsParseError,
   TelegramAdsValidationError,
 } from './errors.js';
-import { normalizeAccountToken, normalizeAdId, normalizeStatMonth, requireText } from './internal.js';
+import {
+  normalizeAccountToken,
+  normalizeAdEditSection,
+  normalizeAdId,
+  normalizeNonNegativeIntegerInput,
+  normalizePositiveIntegerInput,
+  normalizeStatMonth,
+  requireText,
+} from './internal.js';
 import type { TelegramAdsClient, TelegramAdsFetch } from './types.js';
 
 export type TelegramAdsApiServerOptions = {
@@ -32,6 +40,15 @@ type AccountAdParams = AccountParams & {
 
 type MonthQuery = {
   month?: string;
+};
+
+type PaginationQuery = {
+  offset?: string;
+  limit?: string;
+};
+
+type EditParams = AccountAdParams & {
+  section: string;
 };
 
 export function createTelegramAdsApiServer(options: TelegramAdsApiServerOptions): FastifyInstance {
@@ -105,6 +122,39 @@ function registerRoutes(app: FastifyInstance, client: TelegramAdsClient): void {
   app.get('/v1/session/ads', async () => ok({
     rows: await client.fetchAccountAds(),
   }));
+
+  app.get<{ Querystring: PaginationQuery }>('/v1/session/account/budget', async (request) => {
+    const offset = request.query.offset === undefined ? undefined : normalizeNonNegativeIntegerInput(request.query.offset, 'offset');
+    const limit = request.query.limit === undefined ? undefined : normalizePositiveIntegerInput(request.query.limit, 'limit');
+    return ok(await client.fetchAccountBudgetPage(offset, limit));
+  });
+
+  app.get('/v1/session/account/edit', async () => ok(await client.fetchAccountEditPage()));
+
+  app.get<{ Params: AccountAdParams }>('/v1/accounts/:accountToken/ads/:adId/detail', async (request) => {
+    normalizeAccountToken(request.params.accountToken);
+    const adId = normalizeAdId(request.params.adId);
+    return ok(await client.fetchAdDetail(adId));
+  });
+
+  app.get<{ Params: AccountAdParams }>('/v1/accounts/:accountToken/ads/:adId/stats-page', async (request) => {
+    const accountToken = normalizeAccountToken(request.params.accountToken);
+    const adId = normalizeAdId(request.params.adId);
+    return ok(await client.fetchAdStatsPage(accountToken, adId));
+  });
+
+  app.get<{ Params: AccountAdParams }>('/v1/accounts/:accountToken/ads/:adId/budget-page', async (request) => {
+    normalizeAccountToken(request.params.accountToken);
+    const adId = normalizeAdId(request.params.adId);
+    return ok(await client.fetchAdBudgetPage(adId));
+  });
+
+  app.get<{ Params: EditParams }>('/v1/accounts/:accountToken/ads/:adId/edit/:section', async (request) => {
+    normalizeAccountToken(request.params.accountToken);
+    const adId = normalizeAdId(request.params.adId);
+    const section = normalizeAdEditSection(request.params.section);
+    return ok(await client.fetchAdEditPage(adId, section));
+  });
 
   app.get<{ Params: AccountAdParams; Querystring: MonthQuery }>(
     '/v1/accounts/:accountToken/ads/:adId/daily',

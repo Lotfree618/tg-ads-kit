@@ -157,6 +157,67 @@ describe('Telegram Ads client', () => {
     ]);
   });
 
+  it('fetches page snapshots through GET-only page endpoints', async () => {
+    const requests: Array<{ pathname: string; search: string; method: string | undefined }> = [];
+    const fetcher = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(String(input));
+      requests.push({
+        pathname: url.pathname,
+        search: url.search,
+        method: init?.method,
+      });
+
+      if (url.pathname === '/account/budget') {
+        return textResponse(`
+          <a href="/account/budget">TON 19.00</a>
+          <table><tr><td>Payment</td><td>+ TON 1.00</td><td>Jun 9 at 14:56</td></tr></table>
+        `);
+      }
+
+      if (url.pathname === '/account/edit') {
+        return textResponse('<form class="account-edit-form"><input name="email" value="a@example.com"></form>');
+      }
+
+      if (url.pathname === '/account/ad/205') {
+        return textResponse('<title>Ad - Telegram Ads</title><form class="js-ad-form"><input name="title" value="Ad"></form>');
+      }
+
+      if (url.pathname === '/account/ad/205/stats') {
+        return textResponse('<title>Ad - Telegram Ads</title><a href="/reports/account/tg_account_token_1234/ad/205?month=202606">CSV</a>');
+      }
+
+      if (url.pathname === '/account/ad/205/budget') {
+        return textResponse('<title>Ad - Telegram Ads</title><form class="pr-form"><input name="ad_id" value="205"></form>');
+      }
+
+      if (url.pathname === '/account/ad/205/edit_status') {
+        return textResponse('<title>Ad - Telegram Ads</title><form class="pr-popup-edit-form"><input name="ad_id" value="205"></form>');
+      }
+
+      return textResponse('not found', 404);
+    });
+    const client = createTelegramAdsClient({
+      cookie: 'stel_adowner=owner',
+      fetch: fetcher as typeof fetch,
+    });
+
+    await client.fetchAccountBudgetPage(0, 5);
+    await client.fetchAccountEditPage();
+    await client.fetchAdDetail('205');
+    await client.fetchAdStatsPage('tg_account_token_1234', '205');
+    await client.fetchAdBudgetPage('205');
+    await client.fetchAdEditPage('205', 'status');
+
+    expect(requests).toEqual([
+      { pathname: '/account/budget', search: '?offset=0&limit=5', method: undefined },
+      { pathname: '/account/edit', search: '', method: undefined },
+      { pathname: '/account/ad/205', search: '', method: undefined },
+      { pathname: '/account/ad/205/stats', search: '', method: undefined },
+      { pathname: '/account/ad/205/budget', search: '', method: undefined },
+      { pathname: '/account/ad/205/edit_status', search: '', method: undefined },
+    ]);
+  });
+
   it('validates the cookie and account token contract', () => {
     expect(() => createTelegramAdsClient({ cookie: 'ssid=missing-prefix' })).toThrow(
       'cookie does not look like an ads.telegram.org cookie header',

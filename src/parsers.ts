@@ -1,4 +1,5 @@
 import {
+  decodeHtmlEntities,
   escapeRegExp,
   normalizeAdId,
   normalizeHtmlText,
@@ -22,13 +23,25 @@ import type {
   TelegramAdsAccountHourlyStatsRow,
   TelegramAdsAdFiveMinuteBudgetRow,
   TelegramAdsAdFiveMinuteStatsRow,
+  TelegramAdsAdBudgetPage,
+  TelegramAdsAdDetailPage,
+  TelegramAdsAdEditPage,
+  TelegramAdsAdEditSection,
   TelegramAdsAdMetadataRow,
   TelegramAdsAdMonthlyRow,
+  TelegramAdsAdStatsPage,
+  TelegramAdsAccountBudgetPage,
+  TelegramAdsBudgetTransactionRow,
   TelegramAdsAdDailyReportRow,
   TelegramAdsAdDailyStatsRow,
   TelegramAdsAdHourlyBudgetRow,
   TelegramAdsAdHourlyRow,
   TelegramAdsAdHourlyStatsRow,
+  TelegramAdsAccountEditPage,
+  TelegramAdsHtmlForm,
+  TelegramAdsHtmlFormButton,
+  TelegramAdsHtmlFormInput,
+  TelegramAdsPageLink,
 } from './types.js';
 import { TELEGRAM_ADS_STATUSES } from './types.js';
 
@@ -282,6 +295,121 @@ export function parseTelegramAdsAccountAds(html: string): TelegramAdsAdMetadataR
   return mergeAdMetadataRows(rows, []);
 }
 
+export function parseTelegramAdsAdDetailPage(adId: string, html: string): TelegramAdsAdDetailPage {
+  const normalizedAdId = normalizeAdId(adId);
+  const form = extractRequiredForm(html, /js-ad-form/);
+  const fields = indexFormFields(form);
+  const title = extractPageTitle(html);
+
+  return {
+    adId: normalizedAdId,
+    title,
+    form,
+    fields: {
+      title: fields.get('title') ?? null,
+      text: fields.get('text') ?? null,
+      promoteUrl: fields.get('promote_url') ?? null,
+      websiteName: fields.get('website_name') ?? null,
+      cpmMicros: parseOptionalTonMicros(fields.get('cpm')),
+      dailyBudgetMicros: parseOptionalTonMicros(fields.get('daily_budget')),
+      viewsPerUser: parseOptionalInteger(fields.get('views_per_user')),
+      active: parseOptionalBoolean(fields.get('active')),
+      activateDate: fields.get('ad_activate_date') ?? null,
+      activateTime: fields.get('ad_activate_time') ?? null,
+      deactivateDate: fields.get('ad_deactivate_date') ?? null,
+      deactivateTime: fields.get('ad_deactivate_time') ?? null,
+      usesSchedule: fields.get('use_schedule') === '1',
+      schedule: fields.get('schedule') ?? null,
+      scheduleTimezone: fields.get('schedule_tz') ?? null,
+      targetType: fields.get('target_type') ?? null,
+      targetCount: extractTargetCount(html),
+    },
+    links: extractPageLinks(html),
+  };
+}
+
+export function parseTelegramAdsAdStatsPage(accountToken: string, adId: string, html: string): TelegramAdsAdStatsPage {
+  const normalizedAdId = normalizeAdId(adId);
+  const reportPattern = new RegExp(`^/reports/account/${escapeRegExp(accountToken)}/ad/${escapeRegExp(normalizedAdId)}\\?month=\\d{6}$`);
+  const links = extractPageLinks(html);
+
+  return {
+    adId: normalizedAdId,
+    title: extractPageTitle(html),
+    reportLinks: links.filter((link) => reportPattern.test(link.href)),
+    shareStatsPath: links.find((link) => link.href === `/account/ad/${normalizedAdId}/stats/share`)?.href ?? null,
+    rows: extractTableRowTexts(html),
+    links,
+  };
+}
+
+export function parseTelegramAdsAccountBudgetPage(html: string, offset: number | null = null, limit: number | null = null): TelegramAdsAccountBudgetPage {
+  const links = extractPageLinks(html);
+  const transactions = extractTableRowTexts(html)
+    .map(parseBudgetTransactionRow)
+    .filter((row): row is NonNullable<ReturnType<typeof parseBudgetTransactionRow>> => row !== null);
+
+  return {
+    offset,
+    limit,
+    balanceMicros: extractBalanceMicros(links),
+    transactions,
+    pagination: links.filter((link) => /^\/account\/budget\?offset=\d+&limit=\d+$/.test(link.href)),
+    links,
+  };
+}
+
+export function parseTelegramAdsAccountEditPage(html: string): TelegramAdsAccountEditPage {
+  const form = extractRequiredForm(html, /account-edit-form/);
+  const fields = indexFormFields(form);
+
+  return {
+    form,
+    fields: {
+      fullName: fields.get('full_name') ?? null,
+      email: fields.get('email') ?? null,
+      phoneNumber: fields.get('phone_number') ?? null,
+      country: fields.get('country') ?? null,
+      city: fields.get('city') ?? null,
+      adInfo: fields.get('ad_info') ?? null,
+    },
+    links: extractPageLinks(html),
+  };
+}
+
+export function parseTelegramAdsAdBudgetPage(adId: string, html: string): TelegramAdsAdBudgetPage {
+  const normalizedAdId = normalizeAdId(adId);
+  const form = extractRequiredForm(html, /pr-form/);
+  const fields = indexFormFields(form);
+
+  return {
+    adId: normalizedAdId,
+    title: extractPageTitle(html),
+    form,
+    fields: {
+      ownerId: fields.get('owner_id') ?? null,
+      adId: fields.get('ad_id') ?? null,
+      amountMicros: parseOptionalTonMicros(fields.get('amount')),
+      decreaseAmountMicros: parseOptionalTonMicros(fields.get('decr_amount')),
+    },
+    links: extractPageLinks(html),
+  };
+}
+
+export function parseTelegramAdsAdEditPage(adId: string, section: TelegramAdsAdEditSection, html: string): TelegramAdsAdEditPage {
+  const normalizedAdId = normalizeAdId(adId);
+  const form = extractRequiredForm(html, /pr-popup-edit-form|js-ad-form/);
+
+  return {
+    adId: normalizedAdId,
+    section,
+    title: extractPageTitle(html),
+    form,
+    fields: indexFormSnapshotFields(form),
+    links: extractPageLinks(html),
+  };
+}
+
 function extractAdTitleFromRow(rowHtml: string, adId: string): string {
   const linkMatch = rowHtml.match(
     new RegExp(`<a\\b[^>]*href=["']/account/ad/${escapeRegExp(adId)}["'][^>]*>([\\s\\S]*?)</a>`, 'i'),
@@ -339,6 +467,184 @@ function mergeAdMetadataRows(
     });
   }
   return [...byId.values()];
+}
+
+function extractRequiredForm(html: string, classPattern: RegExp): TelegramAdsHtmlForm {
+  const forms = extractForms(html);
+  const form = forms.find((candidate) => candidate.className && classPattern.test(candidate.className));
+  if (!form) {
+    throw new TelegramAdsParseError(`Telegram Ads page did not contain expected form ${classPattern.source}`);
+  }
+  return form;
+}
+
+function extractForms(html: string): TelegramAdsHtmlForm[] {
+  return [...html.matchAll(/<form\b[^>]*>[\s\S]*?<\/form>/gi)].map((match) => parseForm(match[0]));
+}
+
+function parseForm(formHtml: string): TelegramAdsHtmlForm {
+  const openTag = formHtml.match(/^<form\b[^>]*>/i)?.[0] ?? '';
+  return {
+    className: readAttribute(openTag, 'class'),
+    method: readAttribute(openTag, 'method')?.toLowerCase() ?? 'get',
+    action: readAttribute(openTag, 'action'),
+    inputs: extractFormInputs(formHtml),
+    buttons: extractFormButtons(formHtml),
+  };
+}
+
+function extractFormInputs(formHtml: string): TelegramAdsHtmlFormInput[] {
+  const inputs: TelegramAdsHtmlFormInput[] = [];
+  for (const match of formHtml.matchAll(/<(input|textarea|select)\b[^>]*>(?:[\s\S]*?<\/\1>)?/gi)) {
+    const tagHtml = match[0];
+    const tagName = match[1]?.toLowerCase() as TelegramAdsHtmlFormInput['tagName'] | undefined;
+    if (!tagName) continue;
+
+    const rawValue = readAttribute(tagHtml, 'value');
+    const textValue = tagName === 'textarea' ? normalizeHtmlText(tagHtml) : null;
+    inputs.push({
+      tagName,
+      name: readAttribute(tagHtml, 'name'),
+      type: readAttribute(tagHtml, 'type')?.toLowerCase() ?? null,
+      value: rawValue ?? textValue,
+      placeholder: readAttribute(tagHtml, 'placeholder'),
+      checked: /\bchecked(?:\s*=\s*["'][^"']*["'])?/i.test(tagHtml),
+    });
+  }
+  return inputs;
+}
+
+function extractFormButtons(formHtml: string): TelegramAdsHtmlFormButton[] {
+  return [...formHtml.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/gi)].map((match) => {
+    const buttonHtml = match[0];
+    return {
+      type: readAttribute(buttonHtml, 'type'),
+      text: normalizeHtmlText(buttonHtml),
+    };
+  });
+}
+
+function indexFormFields(form: TelegramAdsHtmlForm): Map<string, string | null> {
+  const fields = new Map<string, string | null>();
+  for (const input of form.inputs) {
+    if (!input.name) continue;
+    if ((input.type === 'radio' || input.type === 'checkbox') && !input.checked) {
+      if (!fields.has(input.name)) fields.set(input.name, null);
+      continue;
+    }
+    fields.set(input.name, input.value);
+  }
+  return fields;
+}
+
+function indexFormSnapshotFields(form: TelegramAdsHtmlForm): Record<string, string | boolean | null> {
+  const fields: Record<string, string | boolean | null> = {};
+  for (const input of form.inputs) {
+    if (!input.name) continue;
+    if (input.type === 'radio' || input.type === 'checkbox') {
+      fields[input.name] = Boolean(fields[input.name]) || input.checked;
+    } else {
+      fields[input.name] = input.value;
+    }
+  }
+  return fields;
+}
+
+function extractPageLinks(html: string): TelegramAdsPageLink[] {
+  const links: TelegramAdsPageLink[] = [];
+  const seen = new Set<string>();
+  for (const match of html.matchAll(/<a\b[^>]*href=(["'])([\s\S]*?)\1[^>]*>([\s\S]*?)<\/a>/gi)) {
+    const href = decodeHtmlEntities(match[2] ?? '').trim();
+    if (!href.startsWith('/account') && !href.startsWith('/reports')) continue;
+
+    const text = normalizeHtmlText(match[3] ?? '');
+    const key = `${href}\n${text}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    links.push({ href, text });
+  }
+  return links;
+}
+
+function extractTableRowTexts(html: string): string[] {
+  return [...html.matchAll(/<tr\b[^>]*>[\s\S]*?<\/tr>/gi)]
+    .map((match) => normalizeHtmlText(match[0]))
+    .filter(Boolean);
+}
+
+function extractPageTitle(html: string): string {
+  const title = normalizeHtmlText(html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '');
+  return title.replace(/\s+\u2013\s+Telegram Ads$/i, '').replace(/\s+-\s+Telegram Ads$/i, '') || 'Telegram Ads';
+}
+
+function extractTargetCount(html: string): number | null {
+  const selectedTargets = [...html.matchAll(/\bdata-val=(["'])([\s\S]*?)\1/gi)].length;
+  if (selectedTargets > 0) return selectedTargets;
+
+  const text = normalizeHtmlText(html);
+  const match = text.match(/\b(\d+)\s+channels\b/i);
+  return match?.[1] ? Number(match[1]) : null;
+}
+
+function extractBalanceMicros(links: TelegramAdsPageLink[]): number | null {
+  for (const link of links) {
+    if (link.href !== '/account/budget') continue;
+    const amount = parseMoneyFromText(link.text);
+    if (amount !== null) return amount;
+  }
+  return null;
+}
+
+function parseBudgetTransactionRow(text: string): TelegramAdsBudgetTransactionRow | null {
+  const amount = parseMoneyFromText(text);
+  if (amount === null) return null;
+
+  const direction = /\+\s*\u{1f48e}|\+\s*TON|\+\s*\d/iu.test(text) ? 'credit' : 'debit';
+  const normalizedText = text.replace(/\s+/g, ' ').trim();
+  const dateMatch = normalizedText.match(/\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+at\s+\d{1,2}:\d{2}\b/i);
+  const amountMatch = normalizedText.match(/[+-]\s*(?:(?:\u{1f48e}|TON)\s*)?\d[\d\s,.]*/iu);
+  const description = amountMatch ? normalizedText.slice(0, amountMatch.index).trim() : normalizedText;
+
+  return {
+    description,
+    amountMicros: amount,
+    direction,
+    occurredAtText: dateMatch?.[0] ?? null,
+  };
+}
+
+function parseMoneyFromText(text: string): number | null {
+  const normalized = text.replace(/\s+/g, ' ');
+  const symbolMatch = normalized.match(/\u{1f48e}\s*([0-9][0-9\s,.]*)/u);
+  const tonMatch = normalized.match(/\bTON\s*([0-9][0-9\s,.]*)/i);
+  const amountText = symbolMatch?.[1] ?? tonMatch?.[1] ?? null;
+  if (!amountText) return null;
+
+  const compact = amountText.replace(/\s+/g, '');
+  if (!/\d/.test(compact)) return null;
+  return parseTonMicros(compact);
+}
+
+function parseOptionalTonMicros(value: string | null | undefined): number | null {
+  if (!value) return null;
+  return parseTonMicros(value);
+}
+
+function parseOptionalInteger(value: string | null | undefined): number | null {
+  if (!value) return null;
+  return parseNonNegativeInteger(value);
+}
+
+function parseOptionalBoolean(value: string | null | undefined): boolean | null {
+  if (value === null || value === undefined) return null;
+  if (value === '1' || /^true$/i.test(value)) return true;
+  if (value === '0' || /^false$/i.test(value)) return false;
+  return null;
+}
+
+function readAttribute(tagHtml: string, name: string): string | null {
+  const match = tagHtml.match(new RegExp(`\\b${escapeRegExp(name)}=(["'])([\\s\\S]*?)\\1`, 'i'));
+  return match?.[2] ? decodeHtmlEntities(match[2]) : null;
 }
 
 function compareAccountHourlyRows(

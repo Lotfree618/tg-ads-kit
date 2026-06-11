@@ -1,14 +1,20 @@
 import {
   mergeAdDailyRows,
   parseTelegramAdsAccountAds,
+  parseTelegramAdsAccountBudgetPage,
+  parseTelegramAdsAccountEditPage,
   parseTelegramAdsAccountFiveMinuteStatsCsv,
   parseTelegramAdsAccountHourlyBudgetCsv,
   parseTelegramAdsAccountHourlyStatsCsv,
+  parseTelegramAdsAdBudgetPage,
   parseTelegramAdsAdDailyReportCsv,
   parseTelegramAdsAdDailyStatsCsv,
+  parseTelegramAdsAdDetailPage,
+  parseTelegramAdsAdEditPage,
   parseTelegramAdsAdFiveMinuteStatsCsv,
   parseTelegramAdsAdHourlyBudgetCsv,
   parseTelegramAdsAdHourlyStatsCsv,
+  parseTelegramAdsAdStatsPage,
   parseTelegramAdsDailyBudgetCsv,
   parseTelegramAdsDailyStatsCsv,
   parseTelegramAdsMonthlyReportCsv,
@@ -190,5 +196,134 @@ describe('Telegram Ads parsers', () => {
     expect(() => mergeAdDailyRows(reportRows, statsRows)).toThrow(
       'Telegram Ads ad daily stats missing for ad 187 date 2026-01-16',
     );
+  });
+
+  it('parses GET-only account and ad page snapshots', () => {
+    const adDetail = parseTelegramAdsAdDetailPage('205', `
+      <title>Nange3 - Telegram Ads</title>
+      <a href="/account/ad/205/stats">Statistics</a>
+      <form class="pr-form js-ad-form">
+        <input name="title" value="Nange3">
+        <textarea name="text">Ad body</textarea>
+        <input name="promote_url" value="t.me/example">
+        <input name="website_name" value="Example">
+        <input name="cpm" value="0.30">
+        <input name="daily_budget" value="1.25">
+        <input type="radio" name="views_per_user" value="2" checked>
+        <input type="radio" name="active" value="1" checked>
+        <input name="ad_activate_date" value="2026-06-10">
+        <input name="ad_activate_time" value="15:51">
+        <input type="checkbox" name="use_schedule" value="1" checked>
+        <input name="schedule" value="111">
+        <input name="schedule_tz" value="UTC">
+        <input name="target_type" value="channels">
+        <span data-val="channel_a"></span><span data-val="channel_b"></span>
+        <button type="submit">Save Changes</button>
+      </form>
+    `);
+    const stats = parseTelegramAdsAdStatsPage('tg_account_token_1234', '205', `
+      <title>Nange3 - Telegram Ads</title>
+      <a href="/account/ad/205/stats/share">Share Stats</a>
+      <a href="/reports/account/tg_account_token_1234/ad/205?month=202606">CSV</a>
+      <table><tr><th>Day</th><th>Views</th></tr><tr><td>Total in Jun 2026</td><td>0</td></tr></table>
+    `);
+    const budget = parseTelegramAdsAccountBudgetPage(`
+      <a href="/account/budget">TON 19.00</a>
+      <a href="/account/budget?offset=0&limit=5">1</a>
+      <table>
+        <tr><td>Transfer to the ad Nange3</td><td>- TON 1.00</td><td>Jun 10 at 15:51</td></tr>
+        <tr><td>Payment: Ref#123</td><td>+ TON 30.00</td><td>Jun 9 at 14:56</td></tr>
+      </table>
+    `, 0, 5);
+    const accountEdit = parseTelegramAdsAccountEditPage(`
+      <form class="pr-form account-edit-form">
+        <input name="full_name" value="Example User">
+        <input name="email" value="sarah@example.com">
+        <input name="phone_number" value="+1000">
+        <input name="country" value="US">
+        <input name="city" value="NYC">
+        <textarea name="ad_info">Legal name</textarea>
+        <button type="submit">Save Info</button>
+      </form>
+    `);
+    const adBudget = parseTelegramAdsAdBudgetPage('205', `
+      <title>Nange3 - Telegram Ads</title>
+      <form class="pr-form">
+        <input name="owner_id" value="tg_account_token_1234">
+        <input name="ad_id" value="205">
+        <input name="amount" value="1.00">
+        <input name="decr_amount" value="0.25">
+        <button type="submit">Add to budget</button>
+      </form>
+    `);
+    const adEdit = parseTelegramAdsAdEditPage('205', 'status', `
+      <title>Nange3 - Telegram Ads</title>
+      <form class="pr-popup-edit-form">
+        <input name="ad_id" value="205">
+        <input type="radio" name="active" value="1" checked>
+        <input type="radio" name="active" value="0">
+      </form>
+    `);
+
+    expect(adDetail.fields).toMatchObject({
+      title: 'Nange3',
+      text: 'Ad body',
+      promoteUrl: 't.me/example',
+      cpmMicros: 300_000,
+      dailyBudgetMicros: 1_250_000,
+      viewsPerUser: 2,
+      active: true,
+      usesSchedule: true,
+      targetCount: 2,
+    });
+    expect(adDetail.form.method).toBe('get');
+    expect(stats.reportLinks).toEqual([
+      {
+        href: '/reports/account/tg_account_token_1234/ad/205?month=202606',
+        text: 'CSV',
+      },
+    ]);
+    expect(stats.shareStatsPath).toBe('/account/ad/205/stats/share');
+    expect(budget).toMatchObject({
+      offset: 0,
+      limit: 5,
+      balanceMicros: 19_000_000,
+      transactions: [
+        {
+          description: 'Transfer to the ad Nange3',
+          amountMicros: 1_000_000,
+          direction: 'debit',
+          occurredAtText: 'Jun 10 at 15:51',
+        },
+        {
+          description: 'Payment: Ref#123',
+          amountMicros: 30_000_000,
+          direction: 'credit',
+          occurredAtText: 'Jun 9 at 14:56',
+        },
+      ],
+    });
+    expect(accountEdit.fields).toMatchObject({
+      fullName: 'Example User',
+      email: 'sarah@example.com',
+      phoneNumber: '+1000',
+      country: 'US',
+      city: 'NYC',
+      adInfo: 'Legal name',
+    });
+    expect(adBudget.fields).toMatchObject({
+      ownerId: 'tg_account_token_1234',
+      adId: '205',
+      amountMicros: 1_000_000,
+      decreaseAmountMicros: 250_000,
+    });
+    expect(adEdit).toMatchObject({
+      adId: '205',
+      section: 'status',
+      fields: {
+        ad_id: '205',
+        active: true,
+      },
+    });
   });
 });

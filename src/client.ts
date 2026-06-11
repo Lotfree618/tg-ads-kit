@@ -4,19 +4,28 @@ import {
   TELEGRAM_ADS_BASE_URL,
   maskTelegramAdsCsvPrefix,
   normalizeAccountToken,
+  normalizeAdEditSection,
   normalizeAdId,
   normalizeCookieHeader,
+  normalizeNonNegativeIntegerInput,
+  normalizePositiveIntegerInput,
   normalizeStatMonth,
 } from './internal.js';
 import { mergeAccountDailyRows, mergeAccountHourlyRows, mergeAdDailyRows, mergeAdHourlyRows } from './merge.js';
 import {
   parseTelegramAdsAccountAds,
+  parseTelegramAdsAccountBudgetPage,
+  parseTelegramAdsAccountEditPage,
   parseTelegramAdsAccountHourlyBudgetCsv,
   parseTelegramAdsAccountHourlyStatsCsv,
+  parseTelegramAdsAdBudgetPage,
   parseTelegramAdsAdDailyReportCsv,
   parseTelegramAdsAdDailyStatsCsv,
+  parseTelegramAdsAdDetailPage,
+  parseTelegramAdsAdEditPage,
   parseTelegramAdsAdHourlyBudgetCsv,
   parseTelegramAdsAdHourlyStatsCsv,
+  parseTelegramAdsAdStatsPage,
   parseTelegramAdsDailyBudgetCsv,
   parseTelegramAdsDailyStatsCsv,
   parseTelegramAdsMonthlyReportCsv,
@@ -112,6 +121,72 @@ export function createTelegramAdsClient(options: TelegramAdsClientOptions): Tele
       return parseTelegramAdsAccountAds(await this.fetchAccountAdsHtml());
     },
 
+    async fetchAccountBudgetHtml(offset, limit) {
+      const path = buildAccountBudgetPath(offset, limit);
+      return await getText(path, 'text/html');
+    },
+
+    async fetchAccountBudgetPage(offset, limit) {
+      const normalizedOffset = offset === undefined ? null : normalizeNonNegativeIntegerInput(offset, 'offset');
+      const normalizedLimit = limit === undefined ? null : normalizePositiveIntegerInput(limit, 'limit');
+      return parseTelegramAdsAccountBudgetPage(
+        await this.fetchAccountBudgetHtml(normalizedOffset ?? undefined, normalizedLimit ?? undefined),
+        normalizedOffset,
+        normalizedLimit,
+      );
+    },
+
+    async fetchAccountEditHtml() {
+      return await getText('/account/edit', 'text/html');
+    },
+
+    async fetchAccountEditPage() {
+      return parseTelegramAdsAccountEditPage(await this.fetchAccountEditHtml());
+    },
+
+    async fetchAdDetailHtml(adId) {
+      const normalizedAdId = normalizeAdId(adId);
+      return await getText(`/account/ad/${encodeURIComponent(normalizedAdId)}`, 'text/html');
+    },
+
+    async fetchAdDetail(adId) {
+      const normalizedAdId = normalizeAdId(adId);
+      return parseTelegramAdsAdDetailPage(normalizedAdId, await this.fetchAdDetailHtml(normalizedAdId));
+    },
+
+    async fetchAdStatsHtml(_accountToken, adId) {
+      const normalizedAdId = normalizeAdId(adId);
+      return await getText(`/account/ad/${encodeURIComponent(normalizedAdId)}/stats`, 'text/html');
+    },
+
+    async fetchAdStatsPage(accountToken, adId) {
+      const normalizedToken = normalizeAccountToken(accountToken);
+      const normalizedAdId = normalizeAdId(adId);
+      return parseTelegramAdsAdStatsPage(normalizedToken, normalizedAdId, await this.fetchAdStatsHtml(normalizedToken, normalizedAdId));
+    },
+
+    async fetchAdBudgetHtml(adId) {
+      const normalizedAdId = normalizeAdId(adId);
+      return await getText(`/account/ad/${encodeURIComponent(normalizedAdId)}/budget`, 'text/html');
+    },
+
+    async fetchAdBudgetPage(adId) {
+      const normalizedAdId = normalizeAdId(adId);
+      return parseTelegramAdsAdBudgetPage(normalizedAdId, await this.fetchAdBudgetHtml(normalizedAdId));
+    },
+
+    async fetchAdEditHtml(adId, section) {
+      const normalizedAdId = normalizeAdId(adId);
+      const normalizedSection = normalizeAdEditSection(section);
+      return await getText(`/account/ad/${encodeURIComponent(normalizedAdId)}/edit_${normalizedSection}`, 'text/html');
+    },
+
+    async fetchAdEditPage(adId, section) {
+      const normalizedAdId = normalizeAdId(adId);
+      const normalizedSection = normalizeAdEditSection(section);
+      return parseTelegramAdsAdEditPage(normalizedAdId, normalizedSection, await this.fetchAdEditHtml(normalizedAdId, normalizedSection));
+    },
+
     async fetchAdDailyReportCsv(accountToken, adId, statMonth) {
       const normalizedToken = normalizeAccountToken(accountToken);
       const normalizedAdId = normalizeAdId(adId);
@@ -170,6 +245,13 @@ export function createTelegramAdsClient(options: TelegramAdsClientOptions): Tele
       );
     },
   };
+}
+
+function buildAccountBudgetPath(offset: number | undefined, limit: number | undefined): string {
+  if (offset === undefined && limit === undefined) return '/account/budget';
+  const normalizedOffset = normalizeNonNegativeIntegerInput(offset, 'offset');
+  const normalizedLimit = normalizePositiveIntegerInput(limit, 'limit');
+  return `/account/budget?offset=${normalizedOffset}&limit=${normalizedLimit}`;
 }
 
 function resolveFetch(fetcher: TelegramAdsFetch | undefined): TelegramAdsFetch {

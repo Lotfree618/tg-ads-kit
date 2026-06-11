@@ -3,7 +3,14 @@ import 'dotenv/config';
 import { createTelegramAdsApiServer } from './api.js';
 import { createTelegramAdsClient } from './client.js';
 import { loadTelegramAdsApiConfig } from './config.js';
-import { normalizeAccountToken, normalizeAdId, normalizeStatMonth } from './internal.js';
+import {
+  normalizeAccountToken,
+  normalizeAdEditSection,
+  normalizeAdId,
+  normalizeNonNegativeIntegerInput,
+  normalizePositiveIntegerInput,
+  normalizeStatMonth,
+} from './internal.js';
 
 const [command, ...args] = process.argv.slice(2);
 
@@ -28,6 +35,26 @@ async function main(): Promise<void> {
       printJson(await createClient().fetchMonthlyReport(accountToken, month));
     } else if (command === 'session-ads') {
       printJson(await createClient().fetchAccountAds());
+    } else if (command === 'account-budget') {
+      const offset = args[0] === undefined ? undefined : normalizeNonNegativeIntegerInput(args[0], 'offset');
+      const limit = args[1] === undefined ? undefined : normalizePositiveIntegerInput(args[1], 'limit');
+      printJson(await createClient().fetchAccountBudgetPage(offset, limit));
+    } else if (command === 'account-edit') {
+      printJson(await createClient().fetchAccountEditPage());
+    } else if (command === 'ad-detail') {
+      const adId = normalizeAdId(args[0], 'adId');
+      printJson(await createClient().fetchAdDetail(adId));
+    } else if (command === 'ad-stats-page') {
+      const accountToken = normalizeAccountToken(args[0], 'accountToken');
+      const adId = normalizeAdId(args[1], 'adId');
+      printJson(await createClient().fetchAdStatsPage(accountToken, adId));
+    } else if (command === 'ad-budget-page') {
+      const adId = normalizeAdId(args[0], 'adId');
+      printJson(await createClient().fetchAdBudgetPage(adId));
+    } else if (command === 'ad-edit-page') {
+      const adId = normalizeAdId(args[0], 'adId');
+      const section = normalizeAdEditSection(args[1], 'section');
+      printJson(await createClient().fetchAdEditPage(adId, section));
     } else if (command === 'ad-daily') {
       const accountToken = normalizeAccountToken(args[0], 'accountToken');
       const adId = normalizeAdId(args[1], 'adId');
@@ -82,6 +109,12 @@ Usage:
   tg-ads-kit account-hourly <accountToken>
   tg-ads-kit monthly <accountToken> <YYYYMM>
   tg-ads-kit session-ads
+  tg-ads-kit account-budget [offset limit]
+  tg-ads-kit account-edit
+  tg-ads-kit ad-detail <adId>
+  tg-ads-kit ad-stats-page <accountToken> <adId>
+  tg-ads-kit ad-budget-page <adId>
+  tg-ads-kit ad-edit-page <adId> <cpm|budget|status>
   tg-ads-kit ad-daily <accountToken> <adId> <YYYYMM>
   tg-ads-kit ad-hourly <accountToken> <adId>
 
