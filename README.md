@@ -23,6 +23,8 @@ npm ci
 cp .env.example .env
 ```
 
+The server and CLI load `.env` automatically.
+
 ## Requirements
 
 - Node.js 20 or newer.

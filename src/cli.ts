@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 import { createTelegramAdsApiServer } from './api.js';
 import { createTelegramAdsClient } from './client.js';
 import { loadTelegramAdsApiConfig } from './config.js';

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { createTelegramAdsApiServer } from './api.js';
 import { loadTelegramAdsApiConfig } from './config.js';
 
