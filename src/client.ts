@@ -118,14 +118,19 @@ export function createTelegramAdsClient(options: TelegramAdsClientOptions): Tele
     },
 
     async fetchAdFiveMinuteStatsCsv(accountToken, adId) {
-      return await this.fetchAdDailyStatsCsv(accountToken, adId);
+      const normalizedToken = normalizeAccountToken(accountToken);
+      const normalizedAdId = normalizeAdId(adId);
+      return await getText(
+        `/csv?prefix=ad/${encodeURIComponent(normalizedToken)}/${encodeURIComponent(normalizedAdId)}&period=5min`,
+        'text/csv',
+      );
     },
 
     async fetchAdFiveMinuteBudgetCsv(accountToken, adId) {
       const normalizedToken = normalizeAccountToken(accountToken);
       const normalizedAdId = normalizeAdId(adId);
       return await getText(
-        `/csv?prefix=ad/${encodeURIComponent(normalizedToken)}/${encodeURIComponent(normalizedAdId)}/budget&period=day`,
+        `/csv?prefix=ad/${encodeURIComponent(normalizedToken)}/${encodeURIComponent(normalizedAdId)}/budget&period=5min`,
         'text/csv',
       );
     },
@@ -179,4 +184,3 @@ function describeTelegramAdsRequest(url: URL): string {
 
   return url.pathname;
 }
-

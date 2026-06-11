@@ -126,7 +126,8 @@ const rows = mergeAccountDailyRows(stats, budget);
 - `/reports/account/{accountToken}?month={YYYYMM}`
 - `/reports/account/{accountToken}/ad/{adId}?month={YYYYMM}`
 - `/csv?prefix=ad/{accountToken}/{adId}&period=day`
-- `/csv?prefix=ad/{accountToken}/{adId}/budget&period=day`
+- `/csv?prefix=ad/{accountToken}/{adId}&period=5min`
+- `/csv?prefix=ad/{accountToken}/{adId}/budget&period=5min`
 - `/account` ad metadata table
 
 Money is represented as TON micros, where `1 TON = 1_000_000` micros.

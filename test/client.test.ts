@@ -58,6 +58,56 @@ describe('Telegram Ads client', () => {
     );
   });
 
+  it('uses Telegram Ads 5-minute CSV endpoints for hourly rows', async () => {
+    const requestedPrefixes: string[] = [];
+    const requestedPeriods: string[] = [];
+    const fetcher = vi.fn(async (input: string | URL | Request) => {
+      const url = new URL(String(input));
+      requestedPrefixes.push(url.searchParams.get('prefix') ?? '');
+      requestedPeriods.push(url.searchParams.get('period') ?? '');
+
+      if (url.searchParams.get('prefix') === 'ad/tg_account_token_1234/187') {
+        return textResponse([
+          'date\tViews\tClicks\tJoined',
+          ...Array.from({ length: 12 }, (_, index) => `09 June 2026 2:${String(index * 5).padStart(2, '0')} UTC\t10\t1\t0`),
+        ].join('\n'));
+      }
+
+      if (url.searchParams.get('prefix') === 'ad/tg_account_token_1234/187/budget') {
+        return textResponse([
+          'date\tSpent budget, TON',
+          ...Array.from({ length: 12 }, (_, index) => `09 June 2026 2:${String(index * 5).padStart(2, '0')} UTC\t0.0001`),
+        ].join('\n'));
+      }
+
+      return textResponse('not found', 404);
+    });
+    const client = createTelegramAdsClient({
+      cookie: 'stel_adowner=owner',
+      fetch: fetcher as typeof fetch,
+    });
+
+    const rows = await client.fetchAdHourlyRows('tg_account_token_1234', '187');
+
+    expect(requestedPrefixes).toEqual([
+      'ad/tg_account_token_1234/187',
+      'ad/tg_account_token_1234/187/budget',
+    ]);
+    expect(requestedPeriods).toEqual(['5min', '5min']);
+    expect(rows).toEqual([
+      {
+        adId: '187',
+        bucketStartUtc: '2026-06-09T02:00:00.000Z',
+        statDate: '2026-06-09',
+        statHour: 2,
+        impressions: 120,
+        clicks: 12,
+        costMicros: 1_200,
+        conversions: 0,
+      },
+    ]);
+  });
+
   it('validates the cookie and account token contract', () => {
     expect(() => createTelegramAdsClient({ cookie: 'ssid=missing-prefix' })).toThrow(
       'cookie does not look like an ads.telegram.org cookie header',
@@ -74,4 +124,3 @@ describe('Telegram Ads client', () => {
 function textResponse(body: string, status = 200): Response {
   return new Response(body, { status });
 }
-
