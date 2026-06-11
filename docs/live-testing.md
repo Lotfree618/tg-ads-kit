@@ -15,7 +15,6 @@ Set:
 
 ```txt
 TELEGRAM_ADS_COOKIE=stel_adowner=...; stel_ssid=...; stel_token=...
-TG_ADS_API_TOKEN=replace-with-a-long-random-token
 ```
 
 Keep the Telegram Ads cookie private. Do not commit `.env`, cookies, account
@@ -70,6 +69,12 @@ These commands only perform GET requests through the client. They do not submit
 Telegram Ads forms.
 
 ## HTTP Server Smoke Test
+
+Set a local bearer token before starting the HTTP API server:
+
+```txt
+TG_ADS_API_TOKEN=replace-with-a-long-random-token
+```
 
 ```bash
 npm start
