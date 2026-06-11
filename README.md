@@ -1,12 +1,12 @@
 # tg-ads-kit
 
-Unofficial Telegram Ads reporting client and parser toolkit for Node.js and
-TypeScript.
+Unofficial Telegram Ads reporting API service, client, and parser toolkit for
+Node.js and TypeScript.
 
-This package reads the CSV, TSV, and account HTML surfaces exposed by
-`https://ads.telegram.org` and normalizes them into typed JavaScript objects.
-It is not an official Telegram project and does not implement ad mutation or
-campaign management.
+This project reads the CSV, TSV, and account HTML surfaces exposed by
+`https://ads.telegram.org`, normalizes them into typed JavaScript objects, and
+can run as a standalone HTTP API service. It is not an official Telegram
+project and does not implement ad mutation or campaign management.
 
 ## Install
 
@@ -14,11 +14,76 @@ campaign management.
 npm install tg-ads-kit
 ```
 
+For a standalone checkout:
+
+```bash
+git clone <repo-url> tg-ads-kit
+cd tg-ads-kit
+npm ci
+cp .env.example .env
+```
+
 ## Requirements
 
 - Node.js 20 or newer.
 - A valid `ads.telegram.org` browser Cookie header.
 - A Telegram Ads account token from the account report URLs.
+- A local API bearer token when running the HTTP service.
+
+## Standalone API Server
+
+Set environment variables:
+
+```bash
+export TELEGRAM_ADS_COOKIE='stel_adowner=...; stel_ssid=...; stel_token=...'
+export TG_ADS_API_TOKEN='replace-with-a-long-random-token'
+```
+
+Run in development:
+
+```bash
+npm run dev
+```
+
+Build and run the compiled server:
+
+```bash
+npm run build
+npm start
+```
+
+Call the API:
+
+```bash
+curl "http://127.0.0.1:3000/v1/accounts/$TELEGRAM_ADS_ACCOUNT_TOKEN/daily" \
+  -H "Authorization: Bearer $TG_ADS_API_TOKEN"
+```
+
+Main routes:
+
+- `GET /health`
+- `GET /v1/accounts/:accountToken/daily`
+- `GET /v1/accounts/:accountToken/monthly?month=YYYYMM`
+- `GET /v1/session/ads`
+- `GET /v1/accounts/:accountToken/ads/:adId/daily?month=YYYYMM`
+- `GET /v1/accounts/:accountToken/ads/:adId/hourly`
+- `GET /v1/accounts/:accountToken/snapshot?month=YYYYMM`
+
+See [docs/api.md](docs/api.md) for the API contract.
+
+## CLI
+
+After `npm run build`, the CLI is available at `dist/cli.js`; when installed as
+a package it is exposed as `tg-ads-kit`.
+
+```bash
+tg-ads-kit account-daily "$TELEGRAM_ADS_ACCOUNT_TOKEN"
+tg-ads-kit monthly "$TELEGRAM_ADS_ACCOUNT_TOKEN" 202606
+tg-ads-kit session-ads
+tg-ads-kit ad-daily "$TELEGRAM_ADS_ACCOUNT_TOKEN" 187 202606
+tg-ads-kit ad-hourly "$TELEGRAM_ADS_ACCOUNT_TOKEN" 187
+tg-ads-kit serve
+```
 
 ## Quick Start
 
@@ -90,4 +155,3 @@ a secret and rotate it if exposed.
 ## License
 
 MIT
-

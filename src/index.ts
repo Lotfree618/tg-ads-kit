@@ -1,4 +1,5 @@
 export { createTelegramAdsClient } from './client.js';
+export { loadTelegramAdsApiConfig } from './config.js';
 export {
   TelegramAdsError,
   TelegramAdsHttpError,
@@ -45,4 +46,5 @@ export type {
   TelegramAdsFetch,
   TelegramAdsStatus,
 } from './types.js';
+export type { TelegramAdsApiRuntimeConfig } from './config.js';
 

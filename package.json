@@ -1,7 +1,7 @@
 {
   "name": "tg-ads-kit",
   "version": "0.1.0",
-  "description": "Unofficial Telegram Ads reporting client and parser toolkit.",
+  "description": "Unofficial Telegram Ads reporting API service, client, and parser toolkit.",
   "type": "module",
   "license": "MIT",
   "author": "",
@@ -19,15 +19,24 @@
   "sideEffects": false,
   "files": [
     "dist",
+    "docs",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
   ],
+  "bin": {
+    "tg-ads-kit": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "import": "./dist/api.js",
+      "require": "./dist/api.cjs"
     }
   },
   "main": "./dist/index.cjs",
@@ -36,7 +45,9 @@
   "scripts": {
     "build": "tsup",
     "clean": "rm -rf dist coverage",
+    "dev": "tsx src/server.ts",
     "prepublishOnly": "npm run test && npm run build",
+    "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
@@ -47,8 +58,11 @@
   "devDependencies": {
     "@types/node": "^24.10.1",
     "tsup": "^8.5.1",
+    "tsx": "^4.22.4",
     "typescript": "^5.9.3",
     "vitest": "^4.0.15"
+  },
+  "dependencies": {
+    "fastify": "^5.8.5"
   }
 }
-

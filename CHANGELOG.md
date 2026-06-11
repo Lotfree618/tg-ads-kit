@@ -9,4 +9,4 @@ This project follows Semantic Versioning.
 - Initial TypeScript package with Telegram Ads CSV/HTML parsers.
 - Added an unofficial reporting client for ads.telegram.org CSV and report endpoints.
 - Added merge helpers for daily, monthly, and hourly reporting rows.
-
+- Added standalone Fastify HTTP API server and CLI entrypoint.
