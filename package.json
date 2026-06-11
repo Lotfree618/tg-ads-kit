@@ -4,7 +4,7 @@
   "description": "Unofficial Telegram Ads reporting API service, client, and parser toolkit.",
   "type": "module",
   "license": "MIT",
-  "author": "",
+  "author": "lotfree618",
   "keywords": [
     "telegram",
     "telegram-ads",
@@ -25,7 +25,7 @@
     "LICENSE"
   ],
   "bin": {
-    "tg-ads-kit": "./dist/cli.js"
+    "tg-ads-kit": "dist/cli.js"
   },
   "exports": {
     ".": {
@@ -65,5 +65,13 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "fastify": "^5.8.5"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lotfree618/tg-ads-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Lotfree618/tg-ads-kit/issues"
+  },
+  "homepage": "https://github.com/Lotfree618/tg-ads-kit#readme"
 }
