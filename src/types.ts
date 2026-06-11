@@ -32,12 +32,16 @@ export type TelegramAdsClient = {
   fetchAccountAds(): Promise<TelegramAdsAdMetadataRow[]>;
   fetchAccountBudgetHtml(offset?: number, limit?: number): Promise<string>;
   fetchAccountBudgetPage(offset?: number, limit?: number): Promise<TelegramAdsAccountBudgetPage>;
+  fetchAccountStatsHtml(accountToken: string): Promise<string>;
+  fetchAccountStatsPage(accountToken: string): Promise<TelegramAdsAccountStatsPage>;
   fetchAccountEditHtml(): Promise<string>;
   fetchAccountEditPage(): Promise<TelegramAdsAccountEditPage>;
   fetchAdDetailHtml(adId: string): Promise<string>;
   fetchAdDetail(adId: string): Promise<TelegramAdsAdDetailPage>;
   fetchAdStatsHtml(accountToken: string, adId: string): Promise<string>;
   fetchAdStatsPage(accountToken: string, adId: string): Promise<TelegramAdsAdStatsPage>;
+  fetchAdShareStatsHtml(accountToken: string, adId: string): Promise<string>;
+  fetchAdShareStatsPage(accountToken: string, adId: string): Promise<TelegramAdsAdStatsPage>;
   fetchAdBudgetHtml(adId: string): Promise<string>;
   fetchAdBudgetPage(adId: string): Promise<TelegramAdsAdBudgetPage>;
   fetchAdEditHtml(adId: string, section: TelegramAdsAdEditSection): Promise<string>;
@@ -213,6 +217,13 @@ export type TelegramAdsAdStatsPage = {
   title: string;
   reportLinks: TelegramAdsPageLink[];
   shareStatsPath: string | null;
+  rows: string[];
+  links: TelegramAdsPageLink[];
+};
+
+export type TelegramAdsAccountStatsPage = {
+  title: string;
+  reportLinks: TelegramAdsPageLink[];
   rows: string[];
   links: TelegramAdsPageLink[];
 };

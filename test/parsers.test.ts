@@ -6,6 +6,7 @@ import {
   parseTelegramAdsAccountFiveMinuteStatsCsv,
   parseTelegramAdsAccountHourlyBudgetCsv,
   parseTelegramAdsAccountHourlyStatsCsv,
+  parseTelegramAdsAccountStatsPage,
   parseTelegramAdsAdBudgetPage,
   parseTelegramAdsAdDailyReportCsv,
   parseTelegramAdsAdDailyStatsCsv,
@@ -227,6 +228,11 @@ describe('Telegram Ads parsers', () => {
       <a href="/reports/account/tg_account_token_1234/ad/205?month=202606">CSV</a>
       <table><tr><th>Day</th><th>Views</th></tr><tr><td>Total in Jun 2026</td><td>0</td></tr></table>
     `);
+    const accountStats = parseTelegramAdsAccountStatsPage('tg_account_token_1234', `
+      <title>Telegram Ads</title>
+      <a href="/reports/account/tg_account_token_1234?month=202606">CSV</a>
+      <table><tr><th>Ad ID</th><th>Views</th></tr><tr><td>AD00000205</td><td>10</td></tr></table>
+    `);
     const budget = parseTelegramAdsAccountBudgetPage(`
       <a href="/account/budget">TON 19.00</a>
       <a href="/account/budget?offset=0&limit=5">1</a>
@@ -284,6 +290,13 @@ describe('Telegram Ads parsers', () => {
       },
     ]);
     expect(stats.shareStatsPath).toBe('/account/ad/205/stats/share');
+    expect(accountStats.reportLinks).toEqual([
+      {
+        href: '/reports/account/tg_account_token_1234?month=202606',
+        text: 'CSV',
+      },
+    ]);
+    expect(accountStats.rows).toEqual(['Ad ID Views', 'AD00000205 10']);
     expect(budget).toMatchObject({
       offset: 0,
       limit: 5,

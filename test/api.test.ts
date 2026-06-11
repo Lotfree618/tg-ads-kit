@@ -151,6 +151,48 @@ describe('Telegram Ads API server', () => {
       },
     });
   });
+
+  it('serves GET-only account stats page snapshots', async () => {
+    const fetcher = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(String(input));
+      expect(init?.method).toBeUndefined();
+      if (url.pathname === '/account/stats') {
+        return textResponse(`
+          <title>Telegram Ads</title>
+          <a href="/reports/account/tg_account_token_1234?month=202606">CSV</a>
+          <table><tr><th>Ad ID</th><th>Views</th></tr><tr><td>AD00000205</td><td>10</td></tr></table>
+        `);
+      }
+      return textResponse('not found', 404);
+    });
+    const app = createTelegramAdsApiServer({
+      apiToken: 'test-token',
+      cookie: 'stel_adowner=owner',
+      fetch: fetcher as typeof fetch,
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/v1/accounts/tg_account_token_1234/stats-page',
+      headers: {
+        authorization: 'Bearer test-token',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      ok: true,
+      data: {
+        reportLinks: [
+          {
+            href: '/reports/account/tg_account_token_1234?month=202606',
+            text: 'CSV',
+          },
+        ],
+        rows: ['Ad ID Views', 'AD00000205 10'],
+      },
+    });
+  });
 });
 
 function textResponse(body: string, status = 200): Response {

@@ -39,6 +39,9 @@ async function main(): Promise<void> {
       const offset = args[0] === undefined ? undefined : normalizeNonNegativeIntegerInput(args[0], 'offset');
       const limit = args[1] === undefined ? undefined : normalizePositiveIntegerInput(args[1], 'limit');
       printJson(await createClient().fetchAccountBudgetPage(offset, limit));
+    } else if (command === 'account-stats-page') {
+      const accountToken = normalizeAccountToken(args[0], 'accountToken');
+      printJson(await createClient().fetchAccountStatsPage(accountToken));
     } else if (command === 'account-edit') {
       printJson(await createClient().fetchAccountEditPage());
     } else if (command === 'ad-detail') {
@@ -48,6 +51,10 @@ async function main(): Promise<void> {
       const accountToken = normalizeAccountToken(args[0], 'accountToken');
       const adId = normalizeAdId(args[1], 'adId');
       printJson(await createClient().fetchAdStatsPage(accountToken, adId));
+    } else if (command === 'ad-share-stats-page') {
+      const accountToken = normalizeAccountToken(args[0], 'accountToken');
+      const adId = normalizeAdId(args[1], 'adId');
+      printJson(await createClient().fetchAdShareStatsPage(accountToken, adId));
     } else if (command === 'ad-budget-page') {
       const adId = normalizeAdId(args[0], 'adId');
       printJson(await createClient().fetchAdBudgetPage(adId));
@@ -110,9 +117,11 @@ Usage:
   tg-ads-kit monthly <accountToken> <YYYYMM>
   tg-ads-kit session-ads
   tg-ads-kit account-budget [offset limit]
+  tg-ads-kit account-stats-page <accountToken>
   tg-ads-kit account-edit
   tg-ads-kit ad-detail <adId>
   tg-ads-kit ad-stats-page <accountToken> <adId>
+  tg-ads-kit ad-share-stats-page <accountToken> <adId>
   tg-ads-kit ad-budget-page <adId>
   tg-ads-kit ad-edit-page <adId> <cpm|budget|status>
   tg-ads-kit ad-daily <accountToken> <adId> <YYYYMM>

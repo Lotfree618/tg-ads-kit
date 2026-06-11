@@ -32,6 +32,10 @@ hours, and returns merged hourly rows.
 
 Fetches the account monthly ad report for the requested month.
 
+### `GET /v1/accounts/:accountToken/stats-page`
+
+Fetches `/account/stats` and returns report links, table rows, and page links.
+
 ### `GET /v1/session/ads`
 
 Fetches ad metadata from the account page available to the configured Telegram
@@ -55,6 +59,11 @@ Fetches `/account/ad/:adId` and returns the ad detail form snapshot.
 
 Fetches `/account/ad/:adId/stats` and returns report links, share stats path,
 table rows, and page links.
+
+### `GET /v1/accounts/:accountToken/ads/:adId/share-stats-page`
+
+Fetches `/account/ad/:adId/stats/share` and returns report links, table rows,
+and page links.
 
 ### `GET /v1/accounts/:accountToken/ads/:adId/budget-page`
 
@@ -104,9 +113,10 @@ Failed responses:
 
 ## Mutation Safety
 
-Routes ending in `detail`, `stats-page`, `budget-page`, and `edit/:section`
-are GET-only page snapshots. `tg-ads-kit` does not submit Telegram Ads forms and
-does not call Telegram's internal `/api?hash=...` endpoint.
+Routes ending in `detail`, `stats-page`, `share-stats-page`, `budget-page`, and
+`edit/:section` are GET-only page snapshots. `tg-ads-kit` does not submit
+Telegram Ads forms and does not call Telegram's internal `/api?hash=...`
+endpoint.
 
 ## Example
 

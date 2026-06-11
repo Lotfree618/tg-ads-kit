@@ -18,6 +18,7 @@ import {
   parseTelegramAdsAccountEditPage,
   parseTelegramAdsAccountHourlyBudgetCsv,
   parseTelegramAdsAccountHourlyStatsCsv,
+  parseTelegramAdsAccountStatsPage,
   parseTelegramAdsAdBudgetPage,
   parseTelegramAdsAdDailyReportCsv,
   parseTelegramAdsAdDailyStatsCsv,
@@ -136,6 +137,15 @@ export function createTelegramAdsClient(options: TelegramAdsClientOptions): Tele
       );
     },
 
+    async fetchAccountStatsHtml(_accountToken) {
+      return await getText('/account/stats', 'text/html');
+    },
+
+    async fetchAccountStatsPage(accountToken) {
+      const normalizedToken = normalizeAccountToken(accountToken);
+      return parseTelegramAdsAccountStatsPage(normalizedToken, await this.fetchAccountStatsHtml(normalizedToken));
+    },
+
     async fetchAccountEditHtml() {
       return await getText('/account/edit', 'text/html');
     },
@@ -163,6 +173,17 @@ export function createTelegramAdsClient(options: TelegramAdsClientOptions): Tele
       const normalizedToken = normalizeAccountToken(accountToken);
       const normalizedAdId = normalizeAdId(adId);
       return parseTelegramAdsAdStatsPage(normalizedToken, normalizedAdId, await this.fetchAdStatsHtml(normalizedToken, normalizedAdId));
+    },
+
+    async fetchAdShareStatsHtml(_accountToken, adId) {
+      const normalizedAdId = normalizeAdId(adId);
+      return await getText(`/account/ad/${encodeURIComponent(normalizedAdId)}/stats/share`, 'text/html');
+    },
+
+    async fetchAdShareStatsPage(accountToken, adId) {
+      const normalizedToken = normalizeAccountToken(accountToken);
+      const normalizedAdId = normalizeAdId(adId);
+      return parseTelegramAdsAdStatsPage(normalizedToken, normalizedAdId, await this.fetchAdShareStatsHtml(normalizedToken, normalizedAdId));
     },
 
     async fetchAdBudgetHtml(adId) {

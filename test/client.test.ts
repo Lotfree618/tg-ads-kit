@@ -174,6 +174,10 @@ describe('Telegram Ads client', () => {
         `);
       }
 
+      if (url.pathname === '/account/stats') {
+        return textResponse('<title>Telegram Ads</title><a href="/reports/account/tg_account_token_1234?month=202606">CSV</a>');
+      }
+
       if (url.pathname === '/account/edit') {
         return textResponse('<form class="account-edit-form"><input name="email" value="a@example.com"></form>');
       }
@@ -183,6 +187,10 @@ describe('Telegram Ads client', () => {
       }
 
       if (url.pathname === '/account/ad/205/stats') {
+        return textResponse('<title>Ad - Telegram Ads</title><a href="/reports/account/tg_account_token_1234/ad/205?month=202606">CSV</a>');
+      }
+
+      if (url.pathname === '/account/ad/205/stats/share') {
         return textResponse('<title>Ad - Telegram Ads</title><a href="/reports/account/tg_account_token_1234/ad/205?month=202606">CSV</a>');
       }
 
@@ -202,17 +210,21 @@ describe('Telegram Ads client', () => {
     });
 
     await client.fetchAccountBudgetPage(0, 5);
+    await client.fetchAccountStatsPage('tg_account_token_1234');
     await client.fetchAccountEditPage();
     await client.fetchAdDetail('205');
     await client.fetchAdStatsPage('tg_account_token_1234', '205');
+    await client.fetchAdShareStatsPage('tg_account_token_1234', '205');
     await client.fetchAdBudgetPage('205');
     await client.fetchAdEditPage('205', 'status');
 
     expect(requests).toEqual([
       { pathname: '/account/budget', search: '?offset=0&limit=5', method: undefined },
+      { pathname: '/account/stats', search: '', method: undefined },
       { pathname: '/account/edit', search: '', method: undefined },
       { pathname: '/account/ad/205', search: '', method: undefined },
       { pathname: '/account/ad/205/stats', search: '', method: undefined },
+      { pathname: '/account/ad/205/stats/share', search: '', method: undefined },
       { pathname: '/account/ad/205/budget', search: '', method: undefined },
       { pathname: '/account/ad/205/edit_status', search: '', method: undefined },
     ]);

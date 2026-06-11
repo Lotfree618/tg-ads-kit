@@ -129,6 +129,11 @@ function registerRoutes(app: FastifyInstance, client: TelegramAdsClient): void {
     return ok(await client.fetchAccountBudgetPage(offset, limit));
   });
 
+  app.get<{ Params: AccountParams }>('/v1/accounts/:accountToken/stats-page', async (request) => {
+    const accountToken = normalizeAccountToken(request.params.accountToken);
+    return ok(await client.fetchAccountStatsPage(accountToken));
+  });
+
   app.get('/v1/session/account/edit', async () => ok(await client.fetchAccountEditPage()));
 
   app.get<{ Params: AccountAdParams }>('/v1/accounts/:accountToken/ads/:adId/detail', async (request) => {
@@ -141,6 +146,12 @@ function registerRoutes(app: FastifyInstance, client: TelegramAdsClient): void {
     const accountToken = normalizeAccountToken(request.params.accountToken);
     const adId = normalizeAdId(request.params.adId);
     return ok(await client.fetchAdStatsPage(accountToken, adId));
+  });
+
+  app.get<{ Params: AccountAdParams }>('/v1/accounts/:accountToken/ads/:adId/share-stats-page', async (request) => {
+    const accountToken = normalizeAccountToken(request.params.accountToken);
+    const adId = normalizeAdId(request.params.adId);
+    return ok(await client.fetchAdShareStatsPage(accountToken, adId));
   });
 
   app.get<{ Params: AccountAdParams }>('/v1/accounts/:accountToken/ads/:adId/budget-page', async (request) => {

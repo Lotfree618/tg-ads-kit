@@ -32,6 +32,7 @@ import type {
   TelegramAdsAdStatsPage,
   TelegramAdsAccountBudgetPage,
   TelegramAdsBudgetTransactionRow,
+  TelegramAdsAccountStatsPage,
   TelegramAdsAdDailyReportRow,
   TelegramAdsAdDailyStatsRow,
   TelegramAdsAdHourlyBudgetRow,
@@ -338,6 +339,18 @@ export function parseTelegramAdsAdStatsPage(accountToken: string, adId: string, 
     title: extractPageTitle(html),
     reportLinks: links.filter((link) => reportPattern.test(link.href)),
     shareStatsPath: links.find((link) => link.href === `/account/ad/${normalizedAdId}/stats/share`)?.href ?? null,
+    rows: extractTableRowTexts(html),
+    links,
+  };
+}
+
+export function parseTelegramAdsAccountStatsPage(accountToken: string, html: string): TelegramAdsAccountStatsPage {
+  const reportPattern = new RegExp(`^/reports/account/${escapeRegExp(accountToken)}\\?month=\\d{6}$`);
+  const links = extractPageLinks(html);
+
+  return {
+    title: extractPageTitle(html),
+    reportLinks: links.filter((link) => reportPattern.test(link.href)),
     rows: extractTableRowTexts(html),
     links,
   };

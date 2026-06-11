@@ -66,12 +66,14 @@ Main routes:
 - `GET /health`
 - `GET /v1/accounts/:accountToken/daily`
 - `GET /v1/accounts/:accountToken/hourly`
+- `GET /v1/accounts/:accountToken/stats-page`
 - `GET /v1/accounts/:accountToken/monthly?month=YYYYMM`
 - `GET /v1/session/ads`
 - `GET /v1/session/account/budget?offset=0&limit=100`
 - `GET /v1/session/account/edit`
 - `GET /v1/accounts/:accountToken/ads/:adId/detail`
 - `GET /v1/accounts/:accountToken/ads/:adId/stats-page`
+- `GET /v1/accounts/:accountToken/ads/:adId/share-stats-page`
 - `GET /v1/accounts/:accountToken/ads/:adId/budget-page`
 - `GET /v1/accounts/:accountToken/ads/:adId/edit/:section`
 - `GET /v1/accounts/:accountToken/ads/:adId/daily?month=YYYYMM`
@@ -91,9 +93,11 @@ tg-ads-kit account-hourly "$TELEGRAM_ADS_ACCOUNT_TOKEN"
 tg-ads-kit monthly "$TELEGRAM_ADS_ACCOUNT_TOKEN" 202606
 tg-ads-kit session-ads
 tg-ads-kit account-budget 0 100
+tg-ads-kit account-stats-page "$TELEGRAM_ADS_ACCOUNT_TOKEN"
 tg-ads-kit account-edit
 tg-ads-kit ad-detail 187
 tg-ads-kit ad-stats-page "$TELEGRAM_ADS_ACCOUNT_TOKEN" 187
+tg-ads-kit ad-share-stats-page "$TELEGRAM_ADS_ACCOUNT_TOKEN" 187
 tg-ads-kit ad-budget-page 187
 tg-ads-kit ad-edit-page 187 status
 tg-ads-kit ad-daily "$TELEGRAM_ADS_ACCOUNT_TOKEN" 187 202606
@@ -145,8 +149,10 @@ const rows = mergeAccountDailyRows(stats, budget);
 - `/csv?prefix=ad/{accountToken}/{adId}&period=5min`
 - `/csv?prefix=ad/{accountToken}/{adId}/budget&period=5min`
 - `/account` ad metadata table
+- `/account/stats` account stats page links and table rows
 - `/account/ad/{adId}` ad detail form snapshot
 - `/account/ad/{adId}/stats` ad stats page links and table rows
+- `/account/ad/{adId}/stats/share` shared ad stats page links and table rows
 - `/account/budget` account budget transactions
 - `/account/edit` account info form snapshot
 - `/account/ad/{adId}/budget` ad budget form snapshot
