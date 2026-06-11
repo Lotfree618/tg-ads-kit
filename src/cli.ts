@@ -2,7 +2,7 @@
 import 'dotenv/config';
 import { createTelegramAdsApiServer } from './api.js';
 import { createTelegramAdsClient } from './client.js';
-import { loadTelegramAdsApiConfig } from './config.js';
+import { loadTelegramAdsApiConfig, loadTelegramAdsClientConfig } from './config.js';
 import {
   normalizeAccountToken,
   normalizeAdEditSection,
@@ -96,7 +96,7 @@ async function serve(): Promise<void> {
 }
 
 function createClient() {
-  const config = loadTelegramAdsApiConfig();
+  const config = loadTelegramAdsClientConfig();
   return createTelegramAdsClient({
     cookie: config.cookie,
     ...(config.baseUrl ? { baseUrl: config.baseUrl } : {}),
@@ -129,7 +129,7 @@ Usage:
 
 Environment:
   TELEGRAM_ADS_COOKIE  Required ads.telegram.org Cookie header
-  TG_ADS_API_TOKEN     Required bearer token for the HTTP API server
+  TG_ADS_API_TOKEN     Required only for the HTTP API server
   HOST                 Optional server host, default 127.0.0.1
   PORT                 Optional server port, default 3000
 `);

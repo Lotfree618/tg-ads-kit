@@ -17,7 +17,7 @@ npm install tg-ads-kit
 For a standalone checkout:
 
 ```bash
-git clone <repo-url> tg-ads-kit
+git clone https://github.com/Lotfree618/tg-ads-kit.git tg-ads-kit
 cd tg-ads-kit
 npm ci
 cp .env.example .env

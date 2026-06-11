@@ -1,4 +1,10 @@
 import { createTelegramAdsClient, TelegramAdsHttpError } from '../src/index.js';
+import { createServer } from 'node:http';
+import { execFile } from 'node:child_process';
+import { once } from 'node:events';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 describe('Telegram Ads client', () => {
   it('fetches and parses account daily rows', async () => {
@@ -240,6 +246,63 @@ describe('Telegram Ads client', () => {
       fetch: vi.fn() as unknown as typeof fetch,
     });
     expect(() => client.fetchAccountDailyStatsCsv('short')).rejects.toThrow('accountToken format is invalid');
+  });
+
+  it('runs CLI client commands without requiring the HTTP API bearer token', async () => {
+    const server = createServer((request, response) => {
+      if (request.url === '/account') {
+        response.writeHead(200, { 'content-type': 'text/html' });
+        response.end(`
+          <table>
+            <tr>
+              <td><a href="/account/ad/205">Example Ad</a></td>
+              <td class="--coldp-cpm">TON 0.30</td>
+              <td class="--coldp-budget">TON 12.00</td>
+            </tr>
+          </table>
+        `);
+        return;
+      }
+
+      response.writeHead(404, { 'content-type': 'text/plain' });
+      response.end('not found');
+    });
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+
+    const address = server.address();
+    if (!address || typeof address === 'string') {
+      server.close();
+      throw new Error('Test server did not expose a TCP address');
+    }
+
+    try {
+      const { stdout } = await execFileAsync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'session-ads'], {
+        env: {
+          ...process.env,
+          TELEGRAM_ADS_COOKIE: 'stel_adowner=owner',
+          TELEGRAM_ADS_BASE_URL: `http://127.0.0.1:${address.port}`,
+          TG_ADS_API_TOKEN: '',
+        },
+      });
+
+      expect(JSON.parse(stdout)).toEqual([
+        {
+          adId: '205',
+          adTitle: 'Example Ad',
+          adStatus: null,
+          cpmMicros: 300_000,
+          currentBudgetMicros: 12_000_000,
+        },
+      ]);
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+    }
   });
 });
 

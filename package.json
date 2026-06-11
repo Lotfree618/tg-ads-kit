@@ -1,6 +1,6 @@
 {
   "name": "tg-ads-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Unofficial Telegram Ads reporting API service, client, and parser toolkit.",
   "type": "module",
   "license": "MIT",

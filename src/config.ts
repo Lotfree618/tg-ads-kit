@@ -9,6 +9,21 @@ export type TelegramAdsApiRuntimeConfig = {
   baseUrl?: string;
 };
 
+export type TelegramAdsClientRuntimeConfig = {
+  cookie: string;
+  baseUrl?: string;
+};
+
+export function loadTelegramAdsClientConfig(env: NodeJS.ProcessEnv = process.env): TelegramAdsClientRuntimeConfig {
+  const cookie = normalizeCookieHeader(readRequiredEnv(env, 'TELEGRAM_ADS_COOKIE'), 'TELEGRAM_ADS_COOKIE');
+  const baseUrl = env.TELEGRAM_ADS_BASE_URL?.trim();
+
+  return {
+    cookie,
+    ...(baseUrl ? { baseUrl } : {}),
+  };
+}
+
 export function loadTelegramAdsApiConfig(env: NodeJS.ProcessEnv = process.env): TelegramAdsApiRuntimeConfig {
   const cookie = normalizeCookieHeader(readRequiredEnv(env, 'TELEGRAM_ADS_COOKIE'), 'TELEGRAM_ADS_COOKIE');
   const apiToken = readRequiredEnv(env, 'TG_ADS_API_TOKEN');
@@ -36,4 +51,3 @@ function parsePort(value: string): number {
   }
   return port;
 }
-
