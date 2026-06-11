@@ -82,6 +82,13 @@ Main routes:
 
 See [docs/api.md](docs/api.md) for the API contract.
 
+## Documentation
+
+- [HTTP API](docs/api.md)
+- [TypeScript Client](docs/client.md)
+- [Data Models](docs/data-models.md)
+- [Live Testing](docs/live-testing.md)
+
 ## CLI
 
 After `npm run build`, the CLI is available at `dist/cli.js`; when installed as
